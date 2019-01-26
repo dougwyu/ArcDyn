@@ -1,0 +1,19 @@
+#!/bin/sh
+#BSUB -q short-eth     #debug, short (24 hours), medium (24 hours), long (168 hours = 7 days)
+#BSUB -J fastQCEF
+#BSUB -oo fastQCEF.out
+#BSUB -eo fastQCEF.err
+#BSUB -R "rusage[mem=12000]"
+#BSUB -M 12000
+#BSUB -B        #sends email to me when job starts
+#BSUB -N        # sends email to me when job finishes
+
+. /etc/profile
+module purge
+module load java
+module add python/anaconda/4.2/3.5  # multiqc is now in the path
+
+# i need a different version for PlatesEF because the enclosing folder starts with "Plates", which adds a line to the QC
+bash _parallel_fastQC_EF_20190114.sh # this runs fastQC
+# multiqc --version # gives version number, which is 1.4
+multiqc .  # this analyses the current directory and all subdirectories.

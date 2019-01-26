@@ -1,0 +1,478 @@
+---
+title: "merge_idx_meta_genomecov"
+author: "Douglas Yu"
+date: "10/02/2018"
+output: html_document
+---
+
+```{r}
+# rm(list=ls())
+library(tidyverse)
+library(readxl)
+library(lubridate)
+library(knitr)
+library(pheatmap)
+library(RColorBrewer)
+library(cowplot)
+```
+
+
+```{r load PlatesA2B2}
+setwd("~/Dropbox/Working_docs/Roslin_Greenland/2017/bulk_samples/PlatesA2B2")
+
+# mitogenomes
+outputfolder <- "A2B2_outputs_20190115_F2308_f0x2_q48_minimap2_308mitogenomes"
+idxmetagenomcovfile <- "idx_meta_genomecov_PlatesA2B2_20190115_308mitogenomes.txt"
+
+# barcodes
+# outputfolder <- "A2B2_outputs_20190116_F2308_f0x2_q48_minimap2_406barcodes"
+# idxmetagenomcovfile <- "idx_meta_genomecov_PlatesA2B2_20190116_406barcodes.txt"
+
+idx_meta_genomecov_A2B2 <- read_delim(file.path(outputfolder, idxmetagenomcovfile), delim = "\t", escape_double = FALSE, trim_ws = TRUE)
+
+names(idx_meta_genomecov_A2B2)
+
+idx_meta_genomecov_A2B2 <- idx_meta_genomecov_A2B2 %>% 
+    dplyr::select(Date:mitogenome, 
+                  mapped_reads, 
+                  mapped_reads_COI_corr, 
+                  mapped_reads_COI_lysis_corr, 
+                  sum_coverage, 
+                  mean_coverage, 
+                  stddev, 
+                  coefvar, 
+                  pct_coverage, 
+                  samtools_filter, 
+                  mt_length, 
+                  lysis_buffer_orig_total_ul, 
+                  lysis_buffer_purified_ul, 
+                  lysis_buffer_proportion, 
+                  Lepidoptera_Bombycidae_Bombyx_mori_10ng_COI, 
+                  Coleoptera_Mordellidae_20ng_COI, 
+                  Coleoptera_Elateridae_40ng_COI, 
+                  elaterid_mordellid_sum, 
+                  COI_corr, 
+                  Concentration_ng_per_ul, 
+                  Sample_volume_ul, 
+                  x.260_280_ratio, 
+                  sample, 
+                  ArcDyn_Plate_name, 
+                  EI_Plate_name, 
+                  well, 
+                  Sample_alias, 
+                  TGAC_barcode, 
+                  pathname, 
+                  pathname_genomecov, 
+                  Full_name_of_the_sample)
+
+idx_meta_genomecov_A2B2$COI_corr_components <- "elaterid_mordellid_sum"
+
+idx_meta_genomecov_A2B2 <- idx_meta_genomecov_A2B2 %>% dplyr::select(Date:Coleoptera_Elateridae_40ng_COI, COI_corr_components, COI_corr:Full_name_of_the_sample)
+
+idx_meta_genomecov_A2B2$EI_RUN <- "idx_meta_genomecov_A2B2"
+```
+
+
+```{r load PlatesAB}
+setwd("~/Dropbox/Working_docs/Roslin_Greenland/2016/bulk_samples/PlatesAB_EI_20160512/")
+
+# mitogenomes
+outputfolder <- "AB_outputs_20190115_F2308_f0x2_q48_minimap2_308mitogenomes"
+idxmetagenomcovfile <- "idx_meta_genomecov_PlatesAB_20190115_308mitogenomes.txt"
+
+# barcodes
+# outputfolder <- "AB_outputs_20190116_F2308_f0x2_q48_minimap2_406barcodes"
+# idxmetagenomcovfile <- "idx_meta_genomecov_PlatesAB_20190116_406barcodes.txt"
+
+idx_meta_genomecov_AB <- read_delim(file.path(outputfolder, idxmetagenomcovfile), delim = "\t", escape_double = FALSE, trim_ws = TRUE)
+
+idx_meta_genomecov_AB <- idx_meta_genomecov_AB %>% dplyr::select(Date:mitogenome, mapped_reads, mapped_reads_COI_corr, mapped_reads_COI_lysis_corr, sum_coverage, mean_coverage, stddev, coefvar, pct_coverage, samtools_filter, mt_length, lysis_buffer_orig_total_ul, lysis_buffer_purified_ul, lysis_buffer_proportion, Lepidoptera_Bombycidae_Bombyx_mori_10ng_COI, Coleoptera_Mordellidae_20ng_COI, Coleoptera_Elateridae_40ng_COI, elaterid_mordellid_sum, COI_corr, Concentration_ng_per_ul, Sample_volume_ul, x.260_280_ratio, sample, ArcDyn_Plate_name, EI_Plate_name, well, Sample_alias, TGAC_barcode, pathname, pathname_genomecov, Full_name_of_the_sample)
+
+idx_meta_genomecov_AB$COI_corr_components <- "elaterid_mordellid_sum"
+
+idx_meta_genomecov_AB <- idx_meta_genomecov_AB %>% dplyr::select(Date:Coleoptera_Elateridae_40ng_COI, COI_corr_components, COI_corr:Full_name_of_the_sample)
+
+idx_meta_genomecov_AB$EI_RUN <- "idx_meta_genomecov_AB"
+```
+
+
+```{r load PlatesEF}
+setwd("~/Dropbox/Working_docs/Roslin_Greenland/2017/bulk_samples/PlatesEF")
+
+# mitogenomes
+outputfolder <- "EF_outputs_20190115_F2308_f0x2_q48_minimap2_308mitogenomes"
+idxmetagenomcovfile <- "idx_meta_genomecov_PlatesEF_20190115_308mitogenomes.txt"
+
+# barcodes
+# outputfolder <- "EF_outputs_20190116_F2308_f0x2_q48_minimap2_406barcodes"
+# idxmetagenomcovfile <- "idx_meta_genomecov_PlatesEF_20190116_406barcodes.txt"
+
+idx_meta_genomecov_EF <- read_delim(file.path(outputfolder, idxmetagenomcovfile), delim = "\t", escape_double = FALSE, trim_ws = TRUE) # 308 values of column sample_reference are NA (i.e. one sample's worth). This is not important because this column is one of the library quality reference values. 
+
+# names(idx_meta_genomecov_EF)
+
+idx_meta_genomecov_EF <- idx_meta_genomecov_EF %>% dplyr::select(Date:mitogenome, mapped_reads, mapped_reads_COI_corr, mapped_reads_COI_lysis_corr, sum_coverage, mean_coverage, stddev, coefvar, pct_coverage, samtools_filter, mt_length, lysis_buffer_orig_total_ul, lysis_buffer_purified_ul, lysis_buffer_proportion, Lepidoptera_Bombycidae_Bombyx_mori_10ng_COI, Coleoptera_Mordellidae_20ng_COI, Coleoptera_Elateridae_40ng_COI, elaterid_mordellid_sum, COI_corr, Concentration_ng_per_ul, Sample_volume_ul, x.260_280_ratio, sample, ArcDyn_Plate_name, EI_Plate_name, well, Sample_alias, pathname, pathname_genomecov, Full_name_of_the_sample)
+
+idx_meta_genomecov_EF$TGAC_barcode <- "NA"  # not in the sample metadata
+
+idx_meta_genomecov_EF$COI_corr_components <- "elaterid_mordellid_sum"
+
+idx_meta_genomecov_EF$EI_Plate_name <- as.character(idx_meta_genomecov_EF$EI_Plate_name)
+
+idx_meta_genomecov_EF <- idx_meta_genomecov_EF %>% dplyr::select(Date:Coleoptera_Elateridae_40ng_COI, COI_corr_components, COI_corr:Sample_alias, TGAC_barcode, pathname:Full_name_of_the_sample)
+
+idx_meta_genomecov_EF$EI_RUN <- "idx_meta_genomecov_EF"
+```
+
+
+```{r load PlatesGH}
+setwd("~/Dropbox/Working_docs/Roslin_Greenland/2017/bulk_samples/PlatesGH")
+
+# mitogenomes
+outputfolder <- "GH_outputs_20190115_F2308_f0x2_q48_minimap2_308mitogenomes"
+idxmetagenomcovfile <- "idx_meta_genomecov_PlatesGH_20190115_308mitogenomes.txt"
+
+# barcodes
+# outputfolder <- "GH_outputs_20190116_F2308_f0x2_q48_minimap2_406barcodes"
+# idxmetagenomcovfile <- "idx_meta_genomecov_PlatesGH_20190116_406barcodes.txt"
+
+idx_meta_genomecov_GH <- read_delim(file.path(outputfolder, idxmetagenomcovfile), delim = "\t", escape_double = FALSE, trim_ws = TRUE)
+
+idx_meta_genomecov_GH <- idx_meta_genomecov_GH %>% dplyr::rename(Concentration_ng_per_ul="Concentration_ng_ul")
+idx_meta_genomecov_GH <- idx_meta_genomecov_GH %>% dplyr::rename(ArcDyn_Plate_name="Plate")
+idx_meta_genomecov_GH <- idx_meta_genomecov_GH %>% dplyr::rename(TGAC_barcode="EI_sample_name")
+
+# qty_loaded_uL # is in this dataset and probably should add to all samplemetadata files
+
+# names(idx_meta_genomecov_GH)
+
+idx_meta_genomecov_GH <- idx_meta_genomecov_GH %>% dplyr::select(Date, Plot:mitogenome, mapped_reads, mapped_reads_COI_corr, mapped_reads_COI_lysis_corr, sum_coverage, mean_coverage, stddev, coefvar, pct_coverage, samtools_filter, mt_length, lysis_buffer_orig_total_ul, lysis_buffer_purified_ul, lysis_buffer_proportion, Lepidoptera_Bombycidae_Bombyx_mori_10ng_COI, Coleoptera_Mordellidae_20ng_COI, Coleoptera_Elateridae_40ng_COI, elaterid_mordellid_sum, COI_corr, Concentration_ng_per_ul, Sample_volume_ul, x.260_280_ratio, sample, ArcDyn_Plate_name, well, Sample_alias, TGAC_barcode, pathname, pathname_genomecov, Full_name_of_the_sample)
+
+idx_meta_genomecov_GH$EI_Plate_name <- "NA"  # not in the sample metadata
+
+idx_meta_genomecov_GH$COI_corr_components <- "elaterid_mordellid_sum"
+
+idx_meta_genomecov_GH <- idx_meta_genomecov_GH %>% dplyr::select(Date:Coleoptera_Elateridae_40ng_COI, COI_corr_components, COI_corr:ArcDyn_Plate_name, EI_Plate_name, well:Full_name_of_the_sample)
+
+idx_meta_genomecov_GH$EI_RUN <- "idx_meta_genomecov_GH"
+```
+
+
+```{r}
+names_AB <- names(idx_meta_genomecov_AB)
+names_A2B2 <- names(idx_meta_genomecov_A2B2)
+names_EF <- names(idx_meta_genomecov_EF)
+names_GH <- names(idx_meta_genomecov_GH)
+      
+identical(names_AB, names_A2B2) # TRUE
+identical(names_AB, names_EF) # TRUE
+identical(names_AB, names_GH) # TRUE
+
+# bind rows together
+idx_meta_genomecov_ABA2B2EFGH <- bind_rows(idx_meta_genomecov_AB, idx_meta_genomecov_A2B2, idx_meta_genomecov_EF, idx_meta_genomecov_GH)
+
+# put EI_RUN column first
+idx_meta_genomecov_ABA2B2EFGH <- idx_meta_genomecov_ABA2B2EFGH %>% dplyr::select(EI_RUN, everything())
+
+# confirm 308 mitogenomes or 406 barcodes
+idx_meta_genomecov_ABA2B2EFGH %>% distinct(mitogenome) %>% count()  # 308: number of distinct values of mitogenome
+
+# view names
+names(idx_meta_genomecov_ABA2B2EFGH)
+#  [1] "EI_RUN"                                      "Date"                                       
+#  [3] "Plot"                                        "Trap"                                       
+#  [5] "Week"                                        "mitogenome"                                 
+#  [7] "mapped_reads"                                "mapped_reads_COI_corr"                      
+#  [9] "mapped_reads_COI_lysis_corr"                 "sum_coverage"                               
+# [11] "mean_coverage"                               "stddev"                                     
+# [13] "coefvar"                                     "pct_coverage"                               
+# [15] "samtools_filter"                             "mt_length"                                  
+# [17] "lysis_buffer_orig_total_ul"                  "lysis_buffer_purified_ul"                   
+# [19] "lysis_buffer_proportion"                     "Lepidoptera_Bombycidae_Bombyx_mori_10ng_COI"
+# [21] "Coleoptera_Mordellidae_20ng_COI"             "Coleoptera_Elateridae_40ng_COI"             
+# [23] "COI_corr_components"                         "COI_corr"                                   
+# [25] "Concentration_ng_per_ul"                     "Sample_volume_ul"                           
+# [27] "x.260_280_ratio"                             "sample"                                     
+# [29] "ArcDyn_Plate_name"                           "EI_Plate_name"                              
+# [31] "well"                                        "Sample_alias"                               
+# [33] "TGAC_barcode"                                "pathname"                                   
+# [35] "pathname_genomecov"                          "Full_name_of_the_sample"        
+```
+
+
+ONLY if i'm using the COIBarcode database
+```{r parse out taxonomic ranks for COIBarcodeOnly file, eval = FALSE}
+# the info line of the COI_Barcode fasta file is already well formatted: 
+# Diptera_Anthomyiidae_Zaphne_divisa_BOLD:AAG2441
+# Even this one can be parsed by first keeping together (extra = "merge") everything after the fourth column (tundrica_BOLD:AAG1723). then merge the Species and BOLD_ID  columns (frontata_tundrica_BOLD:AAG1723)
+# Diptera_Anthomyiidae_Zaphne_frontata_tundrica_BOLD:AAG1723
+
+idx_meta_genomecov_ABA2B2EFGH <- idx_meta_genomecov_ABA2B2EFGH %>% tidyr::separate(mitogenome, c("Order", "Family", "Genus", "Species", "BOLD_ID"), sep = "_", remove = FALSE, extra = "merge")
+
+idx_meta_genomecov_ABA2B2EFGH <- idx_meta_genomecov_ABA2B2EFGH %>% tidyr::unite("Species_BOLD", c("Species", "BOLD_ID"))
+```
+
+ONLY if i'm using the mitogenome database
+```{r add taxonomic ranks to mitogenomes}
+taxonomyfilepath <- "~/Dropbox/Working_docs/Roslin_Greenland/2017/bulk_samples/ArcDyn_scripts/6_referenceseqs_metadata/mitogenomes_barcodes"
+taxonomyfile <- "Species_for_mitogenome_sequencing_20181112.xlsx"
+
+taxonomies <- read_excel(file.path(taxonomyfilepath, taxonomyfile), sheet = "mitogenome_database", na = "NA") %>% dplyr::filter(mitogenome_status != "failed")  # 366 rows
+# taxonomies <- read_excel(file.path(taxonomyfilepath, taxonomyfile), sheet = "mitogenome_database", na = "NA") %>% dplyr::filter(to_be_sanger_sequenced == "no" &  mitogenome_status != "failed") 
+# mitogenome_status == "failed" indicates specimens that failed sequencing at Copenhagen and were sent to TGAC/EI 
+# COI_CytB_sanger_sequenced == "yes" indicates specimens that for which we got COI and cytB seqs from Sanger sequencing (n = 41)
+
+taxonomies <- taxonomies %>% dplyr::select(Yinqiu_mitogenome_fastaname, Order, Family, Genus, Species_BOLD)
+
+idx_meta_genomecov_ABA2B2EFGH <-  left_join(idx_meta_genomecov_ABA2B2EFGH, taxonomies, by = c("mitogenome" = "Yinqiu_mitogenome_fastaname")) # %>% dplyr::select(EI_RUN:mitogenome, Order:Species_BOLD, everything())
+```
+
+
+```{r make wide tables, eval = FALSE}
+# create variable from Date, Trap(ABC), and EI_RUN:  e.g. Date_1997_08_04_TrapA_AB
+# stringr::str_pad(x, width = 2, side = "left", pad = "0")  # to ensure that the date always has two digits, e.g. 07.
+# stringr::str_replace(idx_meta_genomecov_ABA2B2EFGH$EI_RUN, "idx_meta_genomecov_", "") # to extract AB, A2B2, EF, GH from EI_RUN
+idx_meta_genomecov_ABA2B2EFGH$DateTrapEIRUN <- str_c("Date", year(idx_meta_genomecov_ABA2B2EFGH$Date), str_pad(month(idx_meta_genomecov_ABA2B2EFGH$Date), 2, side = "left", pad = "0"), str_pad(day(idx_meta_genomecov_ABA2B2EFGH$Date), 2, side = "left", pad = "0"), idx_meta_genomecov_ABA2B2EFGH$Trap, str_replace(idx_meta_genomecov_ABA2B2EFGH$EI_RUN, "idx_meta_genomecov_", ""), sep = "_")
+
+# Make wide table for visualisation (left to right should follow temporal order (DateTrapEIRUN))
+idx_meta_genomecov_ABA2B2EFGH_wide <- idx_meta_genomecov_ABA2B2EFGH %>% dplyr::select(DateTrapEIRUN, mitogenome, mapped_reads_COI_lysis_corr) %>% dplyr::arrange(DateTrapEIRUN) %>% tidyr::spread(DateTrapEIRUN, mapped_reads_COI_lysis_corr) %>% dplyr::arrange(mitogenome)
+
+pctcovermin <- 0.10
+
+idx_meta_genomecov_ABA2B2EFGH_wide_pctcovermin <- idx_meta_genomecov_ABA2B2EFGH %>%
+    dplyr::filter(pct_coverage >= pctcovermin) %>% 
+    dplyr::select(DateTrapEIRUN, mitogenome, mapped_reads_COI_lysis_corr) %>%
+    dplyr::arrange(DateTrapEIRUN) %>% 
+    tidyr::spread(DateTrapEIRUN, mapped_reads_COI_lysis_corr) %>% 
+    dplyr::arrange(mitogenome)
+```
+
+
+```{r write tables, eval=FALSE}
+## check the filenames
+# # idx_meta-genomecov long table for Otso, 219296 rows, 41 columns
+setwd("~/Dropbox/Working_docs/Roslin_Greenland/2017/bulk_samples/PlatesABA2B2EFGH")
+
+# write_tsv(idx_meta_genomecov_ABA2B2EFGH, "idx_meta_genomecov_ABA2B2EFGH_minimap2_20190115_308mitogenomes.txt")
+# write_tsv(idx_meta_genomecov_ABA2B2EFGH, "idx_meta_genomecov_ABA2B2EFGH_minimap2_20190116_406barcodes.txt")
+
+# # # # idx_meta-genomecov wide table for visualisation:  308 rows, 713 columns (prev 707)
+# write_tsv(idx_meta_genomecov_ABA2B2EFGH_wide, "idx_meta_genomecov_ABA2B2EFGH_wide_minimap2_20190115_308mitogenomes.txt")
+# write_tsv(idx_meta_genomecov_ABA2B2EFGH_wide, "idx_meta_genomecov_ABA2B2EFGH_wide_minimap2_20190116_406barcodes.txt")
+# # 
+# # # # idx_meta-genomecov wide table for visualisation:  148 rows, 713 columns
+# write_tsv(idx_meta_genomecov_ABA2B2EFGH_wide_pctcovermin, "idx_meta_genomecov_ABA2B2EFGH_wide_pctcovermin_minimap2_20190115_308mitogenomes.txt")
+# write_tsv(idx_meta_genomecov_ABA2B2EFGH_wide_pctcovermin, "idx_meta_genomecov_ABA2B2EFGH_wide_pctcovermin_minimap2_20190116_406barcodes.txt")
+```
+
+
+```{r pretty heatmap}
+# use only 1997 & 2013, only PlatesAB (or PlatesA2B2), only one Trap (A, B, or C), include the taxonomic columns
+# create new column:  DateTrapEIRUN
+# create variable from Date, Trap(ABC), and EI_RUN:  e.g. Date_1997_08_04_TrapA_AB
+# stringr::str_pad(x, width = 2, side = "left", pad = "0")  # to ensure that the date always has two digits, e.g. 07.
+# stringr::str_replace(idx_meta_genomecov_AB$EI_RUN, "idx_meta_genomecov_", "") # to extract AB, A2B2, EF, GH from EI_RUN
+# idx_meta_genomecov_ABA2B2EFGH$DateTrapEIRUN <- str_c("Sample", year(idx_meta_genomecov_ABA2B2EFGH$Date), str_pad(month(idx_meta_genomecov_ABA2B2EFGH$Date), 2, side = "left", pad = "0"), str_pad(day(idx_meta_genomecov_ABA2B2EFGH$Date), 2, side = "left", pad = "0"), idx_meta_genomecov_ABA2B2EFGH$Trap, str_replace(idx_meta_genomecov_ABA2B2EFGH$EI_RUN, "idx_meta_genomecov_", ""), sep = "_")
+
+idx_meta_genomecov_ABA2B2EFGH$DateEIRUN <- str_c("Sample", year(idx_meta_genomecov_ABA2B2EFGH$Date), str_pad(month(idx_meta_genomecov_ABA2B2EFGH$Date), 2, side = "left", pad = "0"), str_pad(day(idx_meta_genomecov_ABA2B2EFGH$Date), 2, side = "left", pad = "0"), str_replace(idx_meta_genomecov_ABA2B2EFGH$EI_RUN, "idx_meta_genomecov_", ""), sep = "_")
+
+pctcovermin <- 0.10
+eirun <- "idx_meta_genomecov_AB"
+trap <- c("TrapA", "TrapB", "TrapC")
+# years <- c(1997, 2013)
+years <- c(1997, 1998, 1999, 2011, 2012, 2013)
+
+# Make wide table for visualisation (left to right should follow temporal order (Date))
+idx_meta_genomecov_wide_pctcovmin <- idx_meta_genomecov_ABA2B2EFGH %>% 
+    dplyr::mutate(Year = year(Date)) %>% 
+    dplyr::filter(EI_RUN == eirun, pct_coverage >= pctcovermin, Trap %in% trap, Year %in% years) %>% 
+    dplyr::select(DateEIRUN, EI_RUN, Date, Trap, Year, mitogenome, Order, Family, Genus, Species_BOLD, mapped_reads_COI_lysis_corr) %>%
+    dplyr::group_by(Order, Family, Genus, Species_BOLD, DateEIRUN, Date) %>% 
+    dplyr::summarise(mapped_reads_COI_lysis_corr_mean = round(mean(as.numeric(mapped_reads_COI_lysis_corr)))) %>% 
+    dplyr::arrange(Date) %>% 
+    tidyr::spread(DateEIRUN, mapped_reads_COI_lysis_corr_mean) %>% 
+    dplyr::arrange(Order, Family, Genus, Species_BOLD)
+
+# change the sample columns to numeric and replace NA with 0s
+idx_meta_genomecov_wide_pctcovmin <- idx_meta_genomecov_wide_pctcovmin %>%
+    mutate_at(vars(starts_with("Sample_")), funs(as.numeric(.))) %>%
+    mutate_at(vars(starts_with("Sample_")), funs(if_else(is.na(.), 0, .)))
+
+# add up rows that have the same taxonomy
+idx_meta_genomecov_wide_pctcovmin <- idx_meta_genomecov_wide_pctcovmin %>% 
+    group_by(Order, Family, Genus) %>% 
+    summarise_at(vars(starts_with("Sample_")), funs(sum(as.numeric(.)))) %>%
+    arrange(Order, Family, Genus)
+
+# remove any species (rows that have 0 total reads)
+idx_meta_genomecov_wide_pctcovmin <- idx_meta_genomecov_wide_pctcovmin %>% 
+    dplyr::ungroup() %>%   # must ungroup or dplyr forces Order, Family to be included in rowSums
+    dplyr::mutate(readsum = rowSums(select(., starts_with("Sample_")))) %>% 
+    dplyr::filter(readsum > 0) %>% 
+    dplyr::select(-readsum)
+
+# create taxonomy column from taxonomic ranks
+idx_meta_genomecov_wide_pctcovmin <- idx_meta_genomecov_wide_pctcovmin %>% tidyr::unite(taxonomy, Order, Family, Genus) 
+
+# place taxonomy in rownames
+idx_meta_genomecov_wide_pctcovmin <- idx_meta_genomecov_wide_pctcovmin %>% column_to_rownames(var = "taxonomy")
+
+
+arcdynheat <- idx_meta_genomecov_wide_pctcovmin %>% as.matrix(idx_meta_genomecov_wide_pctcovmin)
+
+cal_z_score <- function(x){
+  (x - mean(x)) / sd(x)
+}
+ 
+arcdynheat_norm <- t(apply(arcdynheat, 1, cal_z_score)) # 1 == margin = rows. 2 == cols
+
+# 1997, 2013 only, use gaps_col = c(9)
+# 1997, 1998, 1999, 2011, 2012, 2013, use gaps_col = c(9, 18, 26, 41, 54)
+pheatmap(arcdynheat_norm, 
+         color = colorRampPalette(c("white", "firebrick3"))(50),
+         # color = colorRampPalette(YlOrBr)(10),
+         # scale = "row",
+         # gaps_col = c(9),
+         gaps_col = c(9, 18, 26, 41, 54),
+         # display_numbers = TRUE,
+         clustering_method = "complete", # "complete", ward.D", "ward.D2", "single", "complete", "average" (= UPGMA), "mcquitty" (= WPGMA), "median" (= WPGMC) or "centroid" (= UPGMC).
+         clustering_distance_rows = "euclidean", # euclidean, manhattan, canberra, minkowski
+         cluster_cols = FALSE,
+         cluster_rows = TRUE,
+         cutree_rows = 5)
+
+# idx_meta-genomecov wide table for visualisation:  157 rows, 702 columns
+# write_tsv(idx_meta_genomecov_AB_wide_pctcovmin, "idx_meta_genomecov_AB_wide_pctcovmin_minimap2_20180721.txt")
+```
+
+
+i can see three basic species responses in the 1997/2013 heatmap:
+1.  from low abundance/no obvious peak in 1997, to producing a population peak in 2013
+2.  from having a population peak in 1997, to low abundance/no peak in 2013
+3.  change in timing of population peak between 1997 and 2013 (typically shifting to earlier)
+
+
+
+
+Summary tables to show how many reads and detected species per sample, also summed over year and trap, etc.
+
+```{r summary tables}
+setwd("~/Dropbox/Working_docs/Roslin_Greenland/2017/bulk_samples/PlatesABA2B2EFGH/minimap2_308mitogenomes_20190115")
+idx_meta_genomecov <- read_tsv("idx_meta_genomecov_ABA2B2EFGH_minimap2_20190115_308mitogenomes.txt")
+# idx_meta_genomecov <- read_tsv("idx_meta_genomecov_ABA2B2EFGH_20180214_COIBarcodesOnly.txt")
+
+names(idx_meta_genomecov)
+
+pctcovermin <- 0.1
+
+# EI_runs and mitogenomes are kept separate
+sum_idx_meta_genomecov <- idx_meta_genomecov %>% 
+    group_by_at(vars(Date, Trap, EI_RUN, mitogenome)) %>%
+    filter(pct_coverage >= pctcovermin) %>% 
+    summarise(
+        sum_mapped_reads=sum(mapped_reads),
+        species_obs_mapped_reads=sum(mapped_reads > 0),  # sum() a logical:  mapped_read
+        sum_mapped_reads_COI_corr=sum(mapped_reads_COI_corr),
+        sum_mapped_reads_COI_lysis_corr=sum(mapped_reads_COI_lysis_corr),
+        Bombycid10_spike=first(Lepidoptera_Bombycidae_Bombyx_mori_10ng_COI),
+        Mordellid20_spike=first(Coleoptera_Mordellidae_20ng_COI),
+        Elaterid40_spike=first(Coleoptera_Elateridae_40ng_COI),
+        lysis_buffer_multipler=first(lysis_buffer_proportion)
+        ) %>% 
+    arrange(Date, Trap)
+# write_tsv(sum_idx_meta_genomecov, "idx_meta_genomecov_ABA2B2EFGH_summ0_minimap2_20180721.txt")
+
+# EI_runs are kept separate
+sum_idx_meta_genomecov <- idx_meta_genomecov %>% 
+    group_by_at(vars(Date, Trap, EI_RUN)) %>%
+    filter(pct_coverage >= pctcovermin) %>% 
+    summarise(
+        sum_mapped_reads=sum(mapped_reads),
+        species_obs_mapped_reads=sum(mapped_reads > 0),  # sum() a logical:  mapped_read
+        sum_mapped_reads_COI_corr=sum(mapped_reads_COI_corr),
+        sum_mapped_reads_COI_lysis_corr=sum(mapped_reads_COI_lysis_corr),
+        Bombycid10_spike=first(Lepidoptera_Bombycidae_Bombyx_mori_10ng_COI),
+        Mordellid20_spike=first(Coleoptera_Mordellidae_20ng_COI),
+        Elaterid40_spike=first(Coleoptera_Elateridae_40ng_COI),
+        lysis_buffer_multipler=first(lysis_buffer_proportion)
+        ) %>% 
+    arrange(Date, Trap)
+# write_tsv(sum_idx_meta_genomecov, "idx_meta_genomecov_ABA2B2EFGH_summ1_minimap2_20180721.txt")
+
+# EI_runs with the same date and trap are summed together
+sum_idx_meta_genomecov2 <- idx_meta_genomecov %>% 
+    group_by_at(vars(Date, Trap)) %>%
+    filter(pct_coverage >= pctcovermin) %>% 
+    summarise(
+        sum_mapped_reads=sum(mapped_reads),
+        species_obs_mapped_reads=sum(mapped_reads > 0),  # sum() a logical:  mapped_read
+        sum_mapped_reads_COI_corr=sum(mapped_reads_COI_corr),
+        sum_mapped_reads_COI_lysis_corr=sum(mapped_reads_COI_lysis_corr),
+        species_obs_COI_lysis_corr=sum(mapped_reads_COI_lysis_corr > 0),
+        Bombycid10_spike=first(Lepidoptera_Bombycidae_Bombyx_mori_10ng_COI),
+        Mordellid20_spike=first(Coleoptera_Mordellidae_20ng_COI),
+        Elaterid40_spike=first(Coleoptera_Elateridae_40ng_COI),
+        lysis_buffer_multipler=first(lysis_buffer_proportion)
+        ) %>% 
+    arrange(Date, Trap)
+# write_tsv(sum_idx_meta_genomecov2, "idx_meta_genomecov_ABA2B2EFGH_summ2_minimap2_20180721.txt")
+
+# EI_RUNS with the same year are summed together
+sum_idx_meta_genomecov3 <- idx_meta_genomecov %>% 
+    filter(pct_coverage >= pctcovermin) %>% 
+    mutate(Year = year(Date)) %>% 
+    group_by_at(vars(EI_RUN, Year, Trap)) %>%
+    summarise(
+        weeks = n_distinct(Date),
+        sum_mapped_reads=sum(mapped_reads),
+        species_obs_mapped_reads=sum(mapped_reads > 0),  # sum() a logical:  mapped_read
+        sum_mapped_reads_COI_corr=sum(mapped_reads_COI_corr),
+        sum_mapped_reads_COI_lysis_corr=sum(mapped_reads_COI_lysis_corr),
+        species_obs_COI_lysis_corr=sum(mapped_reads_COI_lysis_corr > 0),
+        Bombycid10_spike=first(Lepidoptera_Bombycidae_Bombyx_mori_10ng_COI),
+        Mordellid20_spike=first(Coleoptera_Mordellidae_20ng_COI),
+        Elaterid40_spike=first(Coleoptera_Elateridae_40ng_COI),
+        lysis_buffer_multipler=first(lysis_buffer_proportion)
+        ) %>%
+    mutate(species_obs_mapped_reads_perweek = round(species_obs_mapped_reads/weeks, 1)) %>% 
+    arrange(Year, Trap)
+# write_tsv(sum_idx_meta_genomecov3, "idx_meta_genomecov_ABA2B2EFGH_summ3_minimap2_20180721.txt")
+```
+
+
+http://felixfan.github.io/ggplot2-remove-grid-background-margin/
+https://stats.idre.ucla.edu/r/faq/how-can-i-visualize-longitudinal-data-in-ggplot2/
+
+```{r}
+sum_idx_meta_genomecovA2B2 <- sum_idx_meta_genomecov %>% dplyr::filter(EI_RUN == "idx_meta_genomecov_A2B2")
+
+p <- ggplot(sum_idx_meta_genomecovA2B2, aes(x = Date, y = species_obs_mapped_reads, group = Trap))
+
+species_obs_each_week <- p + geom_bar(stat = "identity", width = 5) + scale_x_date(date_breaks = "1 year", labels=scales::date_format("%y")) + theme_bw() + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.line = element_line(colour = "black")) +  facet_grid(. ~ Trap) + xlab("Year") + ylab("Observed species richness") + ggtitle("Species observed in each week")
+
+sum_idx_meta_genomecov3AB <- sum_idx_meta_genomecov3 %>% dplyr::filter(EI_RUN == "idx_meta_genomecov_AB")
+sum_idx_meta_genomecov3A2B2 <- sum_idx_meta_genomecov3 %>% dplyr::filter(EI_RUN == "idx_meta_genomecov_A2B2")
+sum_idx_meta_genomecov3EF <- sum_idx_meta_genomecov3 %>% dplyr::filter(EI_RUN == "idx_meta_genomecov_EF" && Year > 1999 && Year < 2010)
+
+sum_idx_meta_genomecov3sub <- sum_idx_meta_genomecov3A2B2
+
+q <- ggplot(sum_idx_meta_genomecov3sub, aes(x = as_date(Year), y = species_obs_mapped_reads, group = Trap))
+
+species_obs_per_year <- q + geom_bar(stat = "identity", width = .5) + scale_x_date(date_breaks = "1 year", labels=scales::date_format("%y")) + theme_bw() + theme(panel.grid.major = element_blank(), axis.line = element_line(colour = "black")) +  facet_grid(. ~ Trap) + xlab("Year") + ylab("Observed species richness") + ggtitle("Total number of species observed in each year")
+
+r <- ggplot(sum_idx_meta_genomecov3sub, aes(x = as_date(Year), y = species_obs_mapped_reads_perweek, group = Trap))
+
+species_obs_per_week <- r + geom_bar(stat = "identity", width = .5) + scale_x_date(date_breaks = "1 year", labels=scales::date_format("%y")) + theme_bw() + theme(panel.grid.major = element_blank(), axis.line = element_line(colour = "black")) +  facet_grid(. ~ Trap) + xlab("Year") + ylab("Observed species richness") + ggtitle("Mean number of species observed *per week* in each year")
+
+
+species_obs_per_year # q, Tot_species_per_year_AB
+species_obs_per_week # r, Tot_species_per_week_per_year_AB
+species_obs_each_week # p
+
+plot_grid(species_obs_per_year, species_obs_per_week, nrow = 2, align = "v")
+
+q + geom_line()
+r + geom_line()
+r + geom_point() + scale_x_date(breaks=scales::date_breaks("3 months"), labels=scales::date_format("%y"))
+```
+

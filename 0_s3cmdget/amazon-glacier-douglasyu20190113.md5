@@ -1,0 +1,23 @@
+                       DIR                                     s3://amazon-glacier-douglasyu/test/
+2016-06-18 11:40 164779622400   4dd63c21a68b69d71596a08ef8304c2c  s3://amazon-glacier-douglasyu/Copenhagen_104spp_mtgenomes_20160610_hiseq6b_2016_06_17.tar
+2016-05-29 09:30 11252776960   f93ecadf854c7aa4649ef0be6978844a  s3://amazon-glacier-douglasyu/Copenhagen_24spp_mtgenomes_20160504_hiseqWb_2016_05_29.tar
+2016-12-05 13:01 122007244800   2baedf6603fe876b6e036472eeb4b685  s3://amazon-glacier-douglasyu/Copenhagen_44spp_mtgenomes_20161204_hiseq6b_2016_12_05.tar
+2016-09-20 20:54 425241579520   55597861df107930ae4a881b0e72d288  s3://amazon-glacier-douglasyu/Earlham_soups_20160910.tar
+2017-06-03 18:06 450506629120   6f73bd9257bb54695a7c72c575b3a599  s3://amazon-glacier-douglasyu/Earlham_soups_20170603.tar
+2016-05-16 16:15 2860605440   99cc7fff6137d6191e5bf5daa797db07  s3://amazon-glacier-douglasyu/GRACE_newforest_pitfall_metabarcoding_20150807.tar
+2016-05-09 18:59 6656798720   06c94c1a095d7a5a62dd619cd3f4a535  s3://amazon-glacier-douglasyu/JiYinqiu_2016_04_26.tar
+2016-05-14 10:52 64156205568   2806f6f46786ae861da61c941bbc7629  s3://amazon-glacier-douglasyu/Negorashi2011_Shared_folder_2016_04_26.tar
+2018-01-24 02:52 41757071360   3c00a119246360278361f90e83d75aae  s3://amazon-glacier-douglasyu/PlatesA2B2_PKG-ENQ-1643-Data_Transfer-PSEQ-1600_2_lanes.tar
+2018-01-24 00:25 217650309120   67c93451465fa5afb0cc341ae6a47c17  s3://amazon-glacier-douglasyu/PlatesA2B2_PKG-ENQ-1643-Data_Transfer-PSEQ-1618_8_lanes.tar
+2018-02-21 19:12 24986681797   bf9cc26c860c52b8ddd26fe2e638cd6a  s3://amazon-glacier-douglasyu/PlatesA2B2_PKG-ENQ-1643-Data_Transfer-PSEQ-1657_1_lane.tar.gz
+2018-03-01 16:43 104488212480   6fa47121fbd1506d28aa4f139427ac70  s3://amazon-glacier-douglasyu/PlatesGH_PKG-ENQ-2379-Data_Transfer-PSEQ-1572-truncated_R2.tar
+2018-03-01 16:15 30632110080   88b36a80dbbf9fd8493e4255f7811f0e  s3://amazon-glacier-douglasyu/PlatesGH_PKG-ENQ-2379-Data_Transfer-PSEQ-1586-trimmed.tar
+2018-03-01 15:56 31319296000   e4022f1d93518bfdd2afc4ea0b3b1512  s3://amazon-glacier-douglasyu/PlatesGH_PKG-ENQ-2379-Data_Transfer-PSEQ-1586.tar
+2018-03-01 13:20 186389913600   0167c4725ff9ac50390127cc6579118c  s3://amazon-glacier-douglasyu/PlatesGH_PKG-ENQ-2379-Data_Transfer-PSEQ-1600.tar
+2018-03-01 15:10 90482073600   e1f1efea1c1feca0976b7df232804c22  s3://amazon-glacier-douglasyu/PlatesGH_PKG-ENQ-2379-Data_Transfer-PSEQ-1603.tar
+2018-02-28 20:43 153352232960   e0d449c2c2b85e3fdc040e6e76a90219  s3://amazon-glacier-douglasyu/PlatesIJCD_PKG_ENQ-1643_Data_Transfer_PSEQ-1599.tar
+2018-02-28 22:19 113758310400   898e654fe207e792fe6786a642e1d9b6  s3://amazon-glacier-douglasyu/PlatesIJCD_PKG_ENQ-1643_Data_Transfer_SEQ-1601.tar
+2016-06-18 17:17      1790   237e1c5ad52dafb8e66ef30f8fccbe34  s3://amazon-glacier-douglasyu/_to_store_on_amazon_glacier.md5
+2016-05-14 14:05 276510279680   0001572a3f830e064477717ccc1680e4  s3://amazon-glacier-douglasyu/bees_2016_04_26.tar
+2016-05-14 21:22 140514467840   d2af720943a733bc204e417a2b1a13f5  s3://amazon-glacier-douglasyu/greenland2015_2016_04_26.tar
+2016-05-09 16:50 739072000   b9e4ddcb7f1171f2f9456cc623f36046  s3://amazon-glacier-douglasyu/kai_zhang_2016_04_26.tar

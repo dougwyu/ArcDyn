@@ -1,0 +1,16 @@
+#!/bin/sh
+#BSUB -q short-eth     #debug, short (24 hours), medium (24 hours), long (168 hours = 7 days)
+#BSUB -J fqCOMBA2B2
+#BSUB -oo fqCOMBA2B2.out
+#BSUB -eo fqCOMBA2B2.err
+#BSUB -R "rusage[mem=12000]"
+#BSUB -M 12000
+#BSUB -B        #sends email to me when job starts
+#BSUB -N        # sends email to me when job finishes
+
+. /etc/profile
+module purge
+
+bash _loop_combine_fastqfiles_platesA2B2Lane1_11_20190113.sh
+
+# bash _loop_combine_fastqfiles_20180202.sh  # old filename

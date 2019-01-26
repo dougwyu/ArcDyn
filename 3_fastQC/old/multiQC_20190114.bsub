@@ -1,0 +1,13 @@
+#!/bin/sh
+#BSUB -q short-eth    # debug, short-eth (24 hours), medium (24 hours), long (168 hours = 7 days)
+#BSUB -J multiqc
+#BSUB -oo multiqc.out
+#BSUB -eo multiqc.err
+#BSUB -M 4000
+#BSUB -B        # sends email to me when job starts
+#BSUB -N        # sends email to me when job finishes
+
+. /etc/profile
+module add python/anaconda/4.2/3.5  # multiqc is now in the path
+# multiqc --version # gives version number, which should be 1.0
+multiqc .  # this analyses the current directory and all subdirectories.

@@ -1,0 +1,14 @@
+#!/bin/sh
+#BSUB -q short-eth     #debug, short (24 hours), medium (24 hours), long (168 hours = 7 days)
+#BSUB -J fqCOMBGH
+#BSUB -oo fqCOMBGH.out
+#BSUB -eo fqCOMBGH.err
+#BSUB -R "rusage[mem=12000]"
+#BSUB -M 12000
+#BSUB -B        #sends email to me when job starts
+#BSUB -N        # sends email to me when job finishes
+
+. /etc/profile
+module purge
+
+bash _loop_combine_fastqfiles_platesGH_20190114.sh

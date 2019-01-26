@@ -1,0 +1,19 @@
+#!/bin/sh
+#BSUB -q long-eth     # debug, short (24 hours), medium (24 hours), long (168 hours = 7 days)
+#BSUB -J s3dnldA2B2
+#BSUB -oo s3dnldA2B2.out
+#BSUB -eo s3dnldA2B2.err
+#BSUB -M 4000
+#BSUB -B        # sends email to me when job starts
+#BSUB -N        # sends email to me when job finishes
+
+. /etc/profile
+module purge
+module add python/anaconda/2.5/2.7 # installed by sysops
+
+cd ~/ArcDyn || exit
+
+# s3cmd get s3://BUCKET/OBJECT LOCAL_FILE
+s3cmd get --multipart-chunk-size-mb=100 s3://amazon-glacier-douglasyu/PlatesA2B2_PKG-ENQ-1643-Data_Transfer-PSEQ-1600_2_lanes.tar PlatesA2B2_PKG-ENQ-1643-Data_Transfer-PSEQ-1600_2_lanes.tar
+s3cmd get --multipart-chunk-size-mb=100 s3://amazon-glacier-douglasyu/PlatesA2B2_PKG-ENQ-1643-Data_Transfer-PSEQ-1618_8_lanes.tar PlatesA2B2_PKG-ENQ-1643-Data_Transfer-PSEQ-1618_8_lanes.tar
+s3cmd get --multipart-chunk-size-mb=100 s3://amazon-glacier-douglasyu/PlatesA2B2_PKG-ENQ-1643-Data_Transfer-PSEQ-1657_1_lane.tar.gz PlatesA2B2_PKG-ENQ-1643-Data_Transfer-PSEQ-1657_1_lane.tar.gz

@@ -1,0 +1,549 @@
+---
+title: "merge_idx_meta_genomecov"
+author: "Douglas Yu"
+date: "10/02/2018"
+output: html_document
+---
+
+This file takes the four outputs idx_meta_genomecov_A2B2/AB/EF/GH and merges them for the next script, which creates different files for downstream analysis. First, we merge the barcodes files. Then we merge the mitogenome files.
+
+We also take the mock datasets and merge them for downstream analysis.
+
+This code has only been run on macOS.
+
+Working directory is the ArcDyn_scripts/5_idxstats_tabulate/ folder
+```{r libraries}
+# rm(list=ls())
+# setwd("~/Dropbox/Working_docs/Roslin_Greenland/2017/bulk_samples/ArcDyn_scripts/5_idxstats_tabulate")
+library(tidyverse)
+library(readxl)
+library(lubridate)
+sessionInfo()
+```
+
+
+# idx_meta_genomecov files
+```{r load idx_meta_genomecov_A2B2 for barcodes}
+# setwd("~/Dropbox/Working_docs/Roslin_Greenland/2017/bulk_samples/PlatesA2B2")
+
+# barcodes
+outputfolder <- "../../PlatesA2B2/A2B2_outputs_20190116_F2308_f0x2_q48_minimap2_406barcodes"
+idxmetagenomcovfile <- "idx_meta_genomecov_PlatesA2B2_20190116_406barcodes.txt"
+
+idx_meta_genomecov_A2B2 <- read_delim(file.path(outputfolder, idxmetagenomcovfile), delim = "\t", escape_double = FALSE, trim_ws = TRUE)
+
+idx_meta_genomecov_A2B2$EI_RUN <- "idx_meta_genomecov_A2B2"
+
+names(idx_meta_genomecov_A2B2)
+
+idx_meta_genomecov_A2B2 <- idx_meta_genomecov_A2B2 %>% 
+    dplyr::select(EI_RUN, DateTrap, Date, Plot, Trap, Week, mitogenome, COI_Species, mapped_reads, mt_length, sample, Full_name_of_the_sample, Year, Sample_alias, ArcDyn_Plate_name, lysis_buffer_proportion, PC = pct_coverage)
+
+names(idx_meta_genomecov_A2B2)
+```
+
+
+```{r load idx_meta_genomecov_AB for barcodes}
+# setwd("~/Dropbox/Working_docs/Roslin_Greenland/2016/bulk_samples/PlatesAB_EI_20160512/")
+
+# barcodes 
+outputfolder <- "../../../../2016/bulk_samples/PlatesAB_EI_20160512/AB_outputs_20190116_F2308_f0x2_q48_minimap2_406barcodes"
+idxmetagenomcovfile <- "idx_meta_genomecov_PlatesAB_20190116_406barcodes.txt"
+
+idx_meta_genomecov_AB <- read_delim(file.path(outputfolder, idxmetagenomcovfile), delim = "\t", escape_double = FALSE, trim_ws = TRUE)
+
+idx_meta_genomecov_AB$EI_RUN <- "idx_meta_genomecov_AB"
+
+names(idx_meta_genomecov_AB)
+
+idx_meta_genomecov_AB <- idx_meta_genomecov_AB %>% 
+    dplyr::select(EI_RUN, DateTrap, Date, Plot, Trap, Week, mitogenome, COI_Species, mapped_reads, mt_length, sample, Full_name_of_the_sample, Year, Sample_alias, ArcDyn_Plate_name, lysis_buffer_proportion, PC = pct_coverage)
+
+names(idx_meta_genomecov_AB)
+```
+
+
+```{r load idx_meta_genomecov_EF for barcodes}
+# setwd("~/Dropbox/Working_docs/Roslin_Greenland/2017/bulk_samples/PlatesEF") 
+
+# barcodes 
+outputfolder <- "../../PlatesEF/EF_outputs_20190116_F2308_f0x2_q48_minimap2_406barcodes"
+idxmetagenomcovfile <- "idx_meta_genomecov_PlatesEF_20190116_406barcodes.txt"
+
+idx_meta_genomecov_EF <- read_delim(file.path(outputfolder, idxmetagenomcovfile), delim = "\t", escape_double = FALSE, trim_ws = TRUE) # 308 values of column sample_reference are NA (i.e. one sample's worth). This is not important because this column is one of the library quality reference values. 
+
+idx_meta_genomecov_EF$EI_RUN <- "idx_meta_genomecov_EF"
+
+names(idx_meta_genomecov_EF)
+
+idx_meta_genomecov_EF <- idx_meta_genomecov_EF %>% 
+    dplyr::select(EI_RUN, DateTrap, Date, Plot, Trap, Week, mitogenome, COI_Species, mapped_reads, mt_length, sample, Full_name_of_the_sample, Year, Sample_alias, ArcDyn_Plate_name, lysis_buffer_proportion, PC = pct_coverage)
+
+names(idx_meta_genomecov_EF)
+```
+
+
+```{r load idx_meta_genomecov_GH for barcodes}
+# setwd("~/Dropbox/Working_docs/Roslin_Greenland/2017/bulk_samples/PlatesGH")
+
+# barcodes # FIRST MERGE THE BARCODES IDX_META_GENOMECOV FILES
+outputfolder <- "../../PlatesGH/GH_outputs_20190116_F2308_f0x2_q48_minimap2_406barcodes"
+idxmetagenomcovfile <- "idx_meta_genomecov_PlatesGH_20190116_406barcodes.txt"
+
+idx_meta_genomecov_GH <- read_delim(file.path(outputfolder, idxmetagenomcovfile), delim = "\t", escape_double = FALSE, trim_ws = TRUE)
+
+idx_meta_genomecov_GH$EI_RUN <- "idx_meta_genomecov_GH"
+
+names(idx_meta_genomecov_GH)
+
+idx_meta_genomecov_GH <- idx_meta_genomecov_GH %>% 
+    dplyr::select(EI_RUN, DateTrap, Date, Plot, Trap, Week, mitogenome, COI_Species, mapped_reads, mt_length, sample, Full_name_of_the_sample, Year, Sample_alias, ArcDyn_Plate_name = Plate, lysis_buffer_proportion, PC = pct_coverage)
+
+names(idx_meta_genomecov_GH)
+```
+
+
+```{r merge idx_meta_genomecov files for barcodes}
+names_AB <- names(idx_meta_genomecov_AB)
+names_A2B2 <- names(idx_meta_genomecov_A2B2)
+names_EF <- names(idx_meta_genomecov_EF)
+names_GH <- names(idx_meta_genomecov_GH)
+      
+identical(names_AB, names_A2B2) # TRUE
+identical(names_AB, names_EF) # TRUE
+identical(names_AB, names_GH) # TRUE
+
+# bind rows together
+idx_meta_genomecov_ABA2B2EFGH <- bind_rows(idx_meta_genomecov_AB, idx_meta_genomecov_A2B2, idx_meta_genomecov_EF, idx_meta_genomecov_GH)
+
+# put EI_RUN column first
+idx_meta_genomecov_ABA2B2EFGH <- idx_meta_genomecov_ABA2B2EFGH %>% 
+    dplyr::select(EI_RUN, everything())
+
+# confirm 409 (barcodes + spikes)
+idx_meta_genomecov_ABA2B2EFGH %>% 
+    distinct(mitogenome) %>% 
+    count()  
+
+idx_meta_genomecov_ABA2B2EFGH_barcodes <- idx_meta_genomecov_ABA2B2EFGH
+
+# view names
+names(idx_meta_genomecov_ABA2B2EFGH_barcodes)
+#  [1] "EI_RUN"                  "DateTrap"                "Date"                    "Plot"                  
+#  [5] "Trap"                    "Week"                    "mitogenome"              "COI_Species"           
+#  [9] "mapped_reads"            "mt_length"               "sample"                  "Full_name_of_the_sample"
+# [13] "Year"                    "Sample_alias"            "ArcDyn_Plate_name"       "lysis_buffer_proportion"
+# [17] "PC" 
+
+rm(idx_meta_genomecov_A2B2, idx_meta_genomecov_AB, idx_meta_genomecov_EF, idx_meta_genomecov_GH, idx_meta_genomecov_ABA2B2EFGH)
+```
+
+
+```{r load idx_meta_genomecov_A2B2 for mitogenomes}
+# setwd("~/Dropbox/Working_docs/Roslin_Greenland/2017/bulk_samples/PlatesA2B2")
+
+# mitogenomes
+outputfolder <- "../../PlatesA2B2/A2B2_outputs_20190115_F2308_f0x2_q48_minimap2_308mitogenomes"
+idxmetagenomcovfile <- "idx_meta_genomecov_PlatesA2B2_20190115_308mitogenomes.txt"
+
+idx_meta_genomecov_A2B2 <- read_delim(file.path(outputfolder, idxmetagenomcovfile), delim = "\t", escape_double = FALSE, trim_ws = TRUE)
+
+idx_meta_genomecov_A2B2$EI_RUN <- "idx_meta_genomecov_A2B2"
+
+names(idx_meta_genomecov_A2B2)
+
+idx_meta_genomecov_A2B2 <- idx_meta_genomecov_A2B2 %>% 
+    dplyr::select(EI_RUN, DateTrap, Date, Plot, Trap, Week, mitogenome, COI_Species, mapped_reads, mt_length, sample, Full_name_of_the_sample, Year, Sample_alias, ArcDyn_Plate_name, lysis_buffer_proportion, PC = pct_coverage)
+
+names(idx_meta_genomecov_A2B2)
+```
+
+
+```{r load idx_meta_genomecov_AB for mitogenomes}
+# setwd("~/Dropbox/Working_docs/Roslin_Greenland/2016/bulk_samples/PlatesAB_EI_20160512/") 
+
+# mitogenomes
+outputfolder <- "../../../../2016/bulk_samples/PlatesAB_EI_20160512/AB_outputs_20190115_F2308_f0x2_q48_minimap2_308mitogenomes"
+idxmetagenomcovfile <- "idx_meta_genomecov_PlatesAB_20190115_308mitogenomes.txt"
+
+idx_meta_genomecov_AB <- read_delim(file.path(outputfolder, idxmetagenomcovfile), delim = "\t", escape_double = FALSE, trim_ws = TRUE)
+
+idx_meta_genomecov_AB$EI_RUN <- "idx_meta_genomecov_AB"
+
+names(idx_meta_genomecov_AB)
+
+idx_meta_genomecov_AB <- idx_meta_genomecov_AB %>% 
+    dplyr::select(EI_RUN, DateTrap, Date, Plot, Trap, Week, mitogenome, COI_Species, mapped_reads, mt_length, sample, Full_name_of_the_sample, Year, Sample_alias, ArcDyn_Plate_name, lysis_buffer_proportion, PC = pct_coverage)
+
+names(idx_meta_genomecov_AB)
+```
+
+
+```{r load idx_meta_genomecov_EF for mitogenomes}
+# setwd("~/Dropbox/Working_docs/Roslin_Greenland/2017/bulk_samples/PlatesEF") 
+
+# mitogenomes 
+outputfolder <- "../../PlatesEF/EF_outputs_20190115_F2308_f0x2_q48_minimap2_308mitogenomes"
+idxmetagenomcovfile <- "idx_meta_genomecov_PlatesEF_20190115_308mitogenomes.txt"
+
+idx_meta_genomecov_EF <- read_delim(file.path(outputfolder, idxmetagenomcovfile), delim = "\t", escape_double = FALSE, trim_ws = TRUE) # 308 values of column sample_reference are NA (i.e. one sample's worth). This is not important because this column is one of the library quality reference values. 
+
+idx_meta_genomecov_EF$EI_RUN <- "idx_meta_genomecov_EF"
+
+names(idx_meta_genomecov_EF)
+
+idx_meta_genomecov_EF <- idx_meta_genomecov_EF %>% 
+    dplyr::select(EI_RUN, DateTrap, Date, Plot, Trap, Week, mitogenome, COI_Species, mapped_reads, mt_length, sample, Full_name_of_the_sample, Year, Sample_alias, ArcDyn_Plate_name, lysis_buffer_proportion, PC = pct_coverage)
+
+names(idx_meta_genomecov_EF)
+```
+
+
+```{r load idx_meta_genomecov_GH for mitogenomes}
+# setwd("~/Dropbox/Working_docs/Roslin_Greenland/2017/bulk_samples/PlatesGH") 
+
+# mitogenomes # THEN MERGE THE MITOGENOME IDX_META_GENOMECOV FILES
+outputfolder <- "../../PlatesGH/GH_outputs_20190115_F2308_f0x2_q48_minimap2_308mitogenomes"
+idxmetagenomcovfile <- "idx_meta_genomecov_PlatesGH_20190115_308mitogenomes.txt"
+
+idx_meta_genomecov_GH <- read_delim(file.path(outputfolder, idxmetagenomcovfile), delim = "\t", escape_double = FALSE, trim_ws = TRUE)
+
+idx_meta_genomecov_GH$EI_RUN <- "idx_meta_genomecov_GH"
+
+names(idx_meta_genomecov_GH)
+
+idx_meta_genomecov_GH <- idx_meta_genomecov_GH %>% 
+    dplyr::select(EI_RUN, DateTrap, Date, Plot, Trap, Week, mitogenome, COI_Species, mapped_reads, mt_length, sample, Full_name_of_the_sample, Year, Sample_alias, ArcDyn_Plate_name = Plate, lysis_buffer_proportion, PC = pct_coverage)
+
+names(idx_meta_genomecov_GH)
+```
+
+
+```{r merge idx_meta_genomecov files for mitogenomes}
+names_AB <- names(idx_meta_genomecov_AB)
+names_A2B2 <- names(idx_meta_genomecov_A2B2)
+names_EF <- names(idx_meta_genomecov_EF)
+names_GH <- names(idx_meta_genomecov_GH)
+      
+identical(names_AB, names_A2B2) # TRUE
+identical(names_AB, names_EF) # TRUE
+identical(names_AB, names_GH) # TRUE
+
+# bind rows together
+idx_meta_genomecov_ABA2B2EFGH <- bind_rows(idx_meta_genomecov_AB, idx_meta_genomecov_A2B2, idx_meta_genomecov_EF, idx_meta_genomecov_GH)
+
+# put EI_RUN column first
+idx_meta_genomecov_ABA2B2EFGH <- idx_meta_genomecov_ABA2B2EFGH %>% 
+    dplyr::select(EI_RUN, everything())
+
+# confirm 311 (mitogenomes + spikes)
+idx_meta_genomecov_ABA2B2EFGH %>% 
+    distinct(mitogenome) %>% 
+    count()  
+
+idx_meta_genomecov_ABA2B2EFGH_mitogenomes <- idx_meta_genomecov_ABA2B2EFGH
+
+# view names
+names(idx_meta_genomecov_ABA2B2EFGH_mitogenomes)
+#  [1] "EI_RUN"                  "DateTrap"                "Date"                    "Plot"                  
+#  [5] "Trap"                    "Week"                    "mitogenome"              "COI_Species"           
+#  [9] "mapped_reads"            "mt_length"               "sample"                  "Full_name_of_the_sample"
+# [13] "Year"                    "Sample_alias"            "ArcDyn_Plate_name"       "lysis_buffer_proportion"
+# [17] "PC"
+
+rm(idx_meta_genomecov_A2B2, idx_meta_genomecov_AB, idx_meta_genomecov_EF, idx_meta_genomecov_GH, idx_meta_genomecov_ABA2B2EFGH)
+```
+
+
+```{r save the files for downstream analysis, eval=FALSE}
+barcodesoutputidxstatstabulatefolder <- "../../PlatesABA2B2EFGH/minimap2_406barcodes_20190116" 
+mitogenomesoutputidxstatstabulatefolder <- "../../PlatesABA2B2EFGH/minimap2_308mitogenomes_20190115"
+
+# write_tsv(idx_meta_genomecov_ABA2B2EFGH_barcodes, file.path(barcodesoutputidxstatstabulatefolder, "idx_meta_genomecov_ABA2B2EFGH_minimap2_20190116_406barcodes.txt")) # output file for merging with the other RUN outputs
+# 
+# write_tsv(idx_meta_genomecov_ABA2B2EFGH_mitogenomes, file.path(mitogenomesoutputidxstatstabulatefolder, "idx_meta_genomecov_ABA2B2EFGH_minimap2_20190115_308mitogenomes.txt")) # output file for merging with the other RUN outputs
+
+# version that gzips the output file if it is too big
+# write_tsv(idx_meta_genomecov_ABA2B2EFGH_barcodes, gzfile(file.path(barcodesoutputidxstatstabulatefolder, "idx_meta_genomecov_ABA2B2EFGH_minimap2_20190116_406barcodes.txt.gz"))) # output file for merging with the other RUN outputs
+```
+
+
+# mocks_idx_meta_genomecov files
+```{r load mocks_idx_meta_genomecov_EF for barcodes}
+# setwd("~/Dropbox/Working_docs/Roslin_Greenland/2017/bulk_samples/PlatesEF") 
+
+outputfolder <- "../../PlatesEF/EF_outputs_20190116_F2308_f0x2_q48_minimap2_406barcodes"
+mockoutputfile <- "mocks_idx_meta_genomecov_PlatesEF_20190116_406barcodes.txt"
+
+mocks_idx_meta_genomecov_EF <- read_delim(file.path(outputfolder, mockoutputfile), delim = "\t", escape_double = FALSE, trim_ws = TRUE)
+
+names(mocks_idx_meta_genomecov_EF)
+
+### input correct input_DNA values for the three COI_spike species
+# For PlatesEF & GH, the amts are 0.2, 0.4, 0.8
+mocks_idx_meta_genomecov_EF <- mocks_idx_meta_genomecov_EF %>% 
+    mutate(input_amount = case_when(
+        mitogenome == "Lepidoptera_Bombycidae_Bombyx_mori_COI" ~ 0.2,
+        mitogenome == "Coleoptera_Mordellidae_COI" ~ 0.4,
+        mitogenome == "Coleoptera_Elateridae_COI" ~ 0.8,
+        TRUE ~ as.numeric(input_amount)
+    )
+)
+
+# for non-COI_spike species, and non-inputDNA species, set input_amount to 0
+mocks_idx_meta_genomecov_EF <- mocks_idx_meta_genomecov_EF %>% 
+    mutate(input_amount = case_when(
+        str_detect(mitogenome, "_COI$") == FALSE & !(mitogenome %in% c("Diptera_Syrphidae_Helophilus_lapponicus_BOLD:ACE4226", "Diptera_Syrphidae_Parasyrphus_tarsatus_BOLD:AAC1834", "Diptera_Syrphidae_Syrphus_torvus_BOLD:AAC6088", "Diptera_Syrphidae_Helophilus_groenlandicus_BOLD:AAB1982", "Diptera_Muscidae_Spilogona_micans_BOLD:AAG1686", "Diptera_Tachinidae_Peleteria_aenea_BOLD:AAZ5252", "Diptera_Muscidae_Spilogona_monacantha_BOLD:ACA4207", "Diptera_Anthomyiidae_Zaphne_occidentalis_BOLD:ABZ1244", "Diptera_Muscidae_Spilogona_almqvistii_BOLD:AAM9104", "Diptera_Scathophagidae_Gonarcticus_arcticus_BOLD:AAM7340", "Diptera_Muscidae_Drymeia_segnis_BOLD:AAD7664", "Diptera_Muscidae_Limnophora_groenlandica_BOLD:AAC6873", "Diptera_Syrphidae_Platycheirus_groenlandicus_BOLD:AAZ4195", "Diptera_Muscidae_Lophosceles_minimus_BOLD:ACM5032", "Diptera_Anthomyiidae_Eutrichota_tunicata_BOLD:AAG2440", "Diptera_Scathophagidae_Scathophaga_apicalis_BOLD:AAV1117", "Diptera_Muscidae_Spilogona_megastoma_BOLD:AAP9046", "Diptera_Scathophagidae_Scathophaga_nigripalpis_BOLD:ACR5253", "Diptera_Muscidae_Spilogona_novaesibiriae_BOLD:AAM9110", "Araneae_Lycosidae_Pardosa_glacialis_BOLD:AAA9651")) ~ 0,
+        TRUE ~ as.numeric(input_amount)
+    )
+)
+```
+
+
+```{r load mocks_idx_meta_genomecov_GH for barcodes}
+# setwd("~/Dropbox/Working_docs/Roslin_Greenland/2017/bulk_samples/PlatesGH")
+
+outputfolder <- "../../PlatesGH/GH_outputs_20190116_F2308_f0x2_q48_minimap2_406barcodes"
+mockoutputfile <- "mocks_idx_meta_genomecov_PlatesGH_20190116_406barcodes.txt"
+
+mocks_idx_meta_genomecov_GH <- read_delim(file.path(outputfolder, mockoutputfile), delim = "\t", escape_double = FALSE, trim_ws = TRUE)
+
+names(mocks_idx_meta_genomecov_GH)
+
+# set all negative control input amounts to 0
+# this includes the spikes, which i fix in the next step
+mocks_idx_meta_genomecov_GH <- mocks_idx_meta_genomecov_GH %>% 
+    mutate(input_amount = case_when(
+        experiment == "negctrl" ~ 0,
+        TRUE ~ input_amount # mockevens already have input_amount values. keep them
+    )
+)
+
+### fix input DNA amounts for COI_spike species
+# For PlatesEF & GH, the amts are 0.2, 0.4, 0.8
+mocks_idx_meta_genomecov_GH <- mocks_idx_meta_genomecov_GH %>% 
+    mutate(input_amount = case_when(
+        mitogenome == "Lepidoptera_Bombycidae_Bombyx_mori_COI" ~ 0.2,
+        mitogenome == "Coleoptera_Mordellidae_COI" ~ 0.4,
+        mitogenome == "Coleoptera_Elateridae_COI" ~ 0.8,
+        TRUE ~ input_amount
+    )
+)
+
+### add input_DNA amounts for mockgradient input species
+mocks_idx_meta_genomecov_GH <- mocks_idx_meta_genomecov_GH %>% 
+    mutate(input_amount = case_when(
+                experiment == "mockgradient" & mitogenome == "Diptera_Syrphidae_Helophilus_lapponicus_BOLD:ACE4226" ~ 2699,
+        experiment == "mockgradient" & mitogenome == "Diptera_Syrphidae_Parasyrphus_tarsatus_BOLD:AAC1834" ~ 1597,
+        experiment == "mockgradient" & mitogenome == "Diptera_Syrphidae_Syrphus_torvus_BOLD:AAC6088" ~ 1228,
+        experiment == "mockgradient" & mitogenome == "Diptera_Syrphidae_Helophilus_groenlandicus_BOLD:AAB1982" ~ 945,
+        experiment == "mockgradient" & mitogenome == "Diptera_Muscidae_Spilogona_micans_BOLD:AAG1686" ~ 727,
+        experiment == "mockgradient" & mitogenome == "Diptera_Tachinidae_Peleteria_aenea_BOLD:AAZ5252" ~ 559,
+        experiment == "mockgradient" & mitogenome == "Diptera_Muscidae_Spilogona_monacantha_BOLD:ACA4207" ~ 430,
+        experiment == "mockgradient" & mitogenome == "Diptera_Anthomyiidae_Zaphne_occidentalis_BOLD:ABZ1244" ~ 331,
+        experiment == "mockgradient" & mitogenome == "Diptera_Muscidae_Spilogona_almqvistii_BOLD:AAM9104" ~ 255,
+        experiment == "mockgradient" & mitogenome == "Diptera_Scathophagidae_Gonarcticus_arcticus_BOLD:AAM7340" ~ 196,
+        experiment == "mockgradient" & mitogenome == "Diptera_Muscidae_Drymeia_segnis_BOLD:AAD7664" ~ 151,
+        experiment == "mockgradient" & mitogenome == "Diptera_Muscidae_Limnophora_groenlandica_BOLD:AAC6873" ~ 116,
+        experiment == "mockgradient" & mitogenome == "Diptera_Syrphidae_Platycheirus_groenlandicus_BOLD:AAZ4195" ~ 89,
+        experiment == "mockgradient" & mitogenome == "Diptera_Muscidae_Lophosceles_minimus_BOLD:ACM5032" ~ 69,
+        experiment == "mockgradient" & mitogenome == "Diptera_Anthomyiidae_Eutrichota_tunicata_BOLD:AAG2440" ~ 53,
+        experiment == "mockgradient" & mitogenome == "Diptera_Scathophagidae_Scathophaga_apicalis_BOLD:AAV1117" ~ 41,
+        experiment == "mockgradient" & mitogenome == "Diptera_Muscidae_Spilogona_megastoma_BOLD:AAP9046" ~ 31,
+        experiment == "mockgradient" & mitogenome == "Diptera_Scathophagidae_Scathophaga_nigripalpis_BOLD:ACR5253" ~ 24,
+        experiment == "mockgradient" & mitogenome == "Diptera_Muscidae_Spilogona_novaesibiriae_BOLD:AAM9110" ~ 20,
+        TRUE ~ input_amount
+    )
+)
+
+### set all other mockgradient species to NA
+mocks_idx_meta_genomecov_GH <- mocks_idx_meta_genomecov_GH %>% 
+    mutate(input_amount = case_when(
+        experiment == "mockgradient" & is.na(input_amount) ~ 0,
+        TRUE ~ input_amount
+    )
+)
+
+# for mockeven experiment, set input_amount for non-COI_spike species and non-inputDNA species to 0
+mocks_idx_meta_genomecov_GH <- mocks_idx_meta_genomecov_GH %>% 
+    mutate(input_amount = case_when(
+        experiment == "mockeven" &  # mockeven experiment
+        str_detect(mitogenome, "_COI$") == FALSE &   # non-COI_spike species
+        !(mitogenome %in% c("Diptera_Syrphidae_Helophilus_lapponicus_BOLD:ACE4226",  "Diptera_Syrphidae_Parasyrphus_tarsatus_BOLD:AAC1834", "Diptera_Syrphidae_Syrphus_torvus_BOLD:AAC6088", "Diptera_Syrphidae_Helophilus_groenlandicus_BOLD:AAB1982", "Diptera_Muscidae_Spilogona_micans_BOLD:AAG1686", "Diptera_Tachinidae_Peleteria_aenea_BOLD:AAZ5252", "Diptera_Muscidae_Spilogona_monacantha_BOLD:ACA4207", "Diptera_Anthomyiidae_Zaphne_occidentalis_BOLD:ABZ1244", "Diptera_Muscidae_Spilogona_almqvistii_BOLD:AAM9104", "Diptera_Scathophagidae_Gonarcticus_arcticus_BOLD:AAM7340", "Diptera_Muscidae_Drymeia_segnis_BOLD:AAD7664", "Diptera_Muscidae_Limnophora_groenlandica_BOLD:AAC6873", "Diptera_Syrphidae_Platycheirus_groenlandicus_BOLD:AAZ4195", "Diptera_Muscidae_Lophosceles_minimus_BOLD:ACM5032", "Diptera_Anthomyiidae_Eutrichota_tunicata_BOLD:AAG2440", "Diptera_Scathophagidae_Scathophaga_apicalis_BOLD:AAV1117", "Diptera_Muscidae_Spilogona_megastoma_BOLD:AAP9046", "Diptera_Scathophagidae_Scathophaga_nigripalpis_BOLD:ACR5253", "Diptera_Muscidae_Spilogona_novaesibiriae_BOLD:AAM9110", "Araneae_Lycosidae_Pardosa_glacialis_BOLD:AAA9651")) ~ 0, # species not added to the mocks
+        TRUE ~ input_amount
+    )
+)
+```
+	
+       	
+```{r merge mocks_idx_meta_genomecov files for barcodes}
+names_EF <- names(mocks_idx_meta_genomecov_EF)
+names_GH <- names(mocks_idx_meta_genomecov_GH)
+
+identical(names_EF, names_GH) # TRUE
+
+# bind rows together
+mocks_idx_meta_genomecov_EFGH <- bind_rows(mocks_idx_meta_genomecov_EF, mocks_idx_meta_genomecov_GH)
+
+# confirm 409 (mitogenomes + spikes)
+mocks_idx_meta_genomecov_EFGH %>% 
+    distinct(mitogenome) %>% 
+    count()  
+
+mocks_idx_meta_genomecov_EFGH_barcodes <- mocks_idx_meta_genomecov_EFGH
+
+# view names
+names(mocks_idx_meta_genomecov_EFGH_barcodes)
+# [1] "sample"       "plate"        "experiment"   "run"          "mitogenome"   "PC"          
+# [7] "mapped_reads" "input_amount" "plate_well"
+
+rm(mocks_idx_meta_genomecov_EF, mocks_idx_meta_genomecov_GH, mocks_idx_meta_genomecov_EFGH)
+```
+	
+
+```{r load mocks_idx_meta_genomecov_EF for mitogenomes}
+# setwd("~/Dropbox/Working_docs/Roslin_Greenland/2017/bulk_samples/PlatesEF") 
+
+outputfolder <- "../../PlatesEF/EF_outputs_20190115_F2308_f0x2_q48_minimap2_308mitogenomes"
+mockoutputfile <- "mocks_idx_meta_genomecov_PlatesEF_20190115_308mitogenomes.txt"
+
+mocks_idx_meta_genomecov_EF <- read_delim(file.path(outputfolder, mockoutputfile), delim = "\t", escape_double = FALSE, trim_ws = TRUE)
+
+names(mocks_idx_meta_genomecov_EF)
+
+### input correct input_DNA values for the three COI_spike species
+# For PlatesEF & GH, the amts are 0.2, 0.4, 0.8
+mocks_idx_meta_genomecov_EF <- mocks_idx_meta_genomecov_EF %>% 
+    mutate(input_amount = case_when(
+        mitogenome == "Lepidoptera_Bombycidae_Bombyx_mori_COI" ~ 0.2,
+        mitogenome == "Coleoptera_Mordellidae_COI" ~ 0.4,
+        mitogenome == "Coleoptera_Elateridae_COI" ~ 0.8,
+        TRUE ~ as.numeric(input_amount)
+    )
+)
+
+# for non-COI_spike species, and non-inputDNA species, set input_amount to 0
+mocks_idx_meta_genomecov_EF <- mocks_idx_meta_genomecov_EF %>% 
+    mutate(input_amount = case_when(
+        str_detect(mitogenome, "_COI$") == FALSE & !(mitogenome %in% c("PlateI_G11_AAB1982_Diptera_Syrphidae_Helophilus_groenlandicus_spades_pilon", "197_AAG1686_Diptera_Muscidae_Spilogona_micans_IDBA_pilon", "MITO_18_AAZ5252_Diptera_Tachinidae_Peleteria_aenea_SPADESmeta_pilon", "MITO_26_ACA4207_Diptera_Muscidae_Spilogona_monacantha_IDBApilon", "MITO_11_ABZ1244_Diptera_Anthomyiidae_Zaphne_occidentalis_IDBApilon", "PlateJ_C1_ACE4226_Diptera_Syrphidae_Helophilus_lapponicus_idba_spades_consensus", "PlateI_H5_AAC1834_Diptera_Syrphidae_Parasyrphus_tarsatus_refsoup_Concatenated", "MITO_8_AAD7664_Diptera_Muscidae_Drymeia_segnis_IDBApilon", "PlateI_G3_AAC6088_Diptera_Syrphidae_Syrphus_torvus_idba_spades_consensus", "MITO_7_AAM9104_Diptera_Muscidae_Spilogona_almqvistii_IDBApilon", "PlateI_G4_AAM7340_Diptera_Scathophagidae_Gonarcticus_arcticus_spades_pilon", "MITO_24_AAC6873_Diptera_Muscidae_Limnophora_groenlandica_IDBApilon", "464_AAZ4195_Diptera_Syrphidae_Platycheirus_groenlandicus_IDBA_pilon", "MITO_22_ACM5032_Diptera_Muscidae_Lophosceles_minimus_IDBApilon", "PlateI_G10_AAG2440_Diptera_Anthomyiidae_Eutrichota_tunicata_blastSpades_pilon", "PlateI_D9_AAV1117_Diptera_Scathophagidae_Scathophaga_apicalis_spades_pilon", "34_ACE7762_Diptera_Muscidae_Spilogona_denudata_IDBA_pilon_COIDET_AAP9046_Diptera_Muscidae_Spilogona_megastoma", "PlateI_H1_ACR5253_Diptera_Scathophagidae_Scathophaga_nigripalpis_spades_pilon", "soup_AAM9110_Diptera_Muscidae_Spilogona_novaesibiriae_geneiousmapping", "608_AAA9651_Araneae_Lycosidae_Pardosa_glacialis_IDBA_pilon")) ~ 0,
+        TRUE ~ as.numeric(input_amount)
+    )
+)
+```
+
+
+```{r load mocks_idx_meta_genomecov_GH for mitogenomes}
+# setwd("~/Dropbox/Working_docs/Roslin_Greenland/2017/bulk_samples/PlatesGH")
+
+outputfolder <- "../../PlatesGH/GH_outputs_20190115_F2308_f0x2_q48_minimap2_308mitogenomes"
+mockoutputfile <- "mocks_idx_meta_genomecov_PlatesGH_20190115_308mitogenomes.txt"
+
+mocks_idx_meta_genomecov_GH <- read_delim(file.path(outputfolder, mockoutputfile), delim = "\t", escape_double = FALSE, trim_ws = TRUE)
+
+names(mocks_idx_meta_genomecov_GH)
+
+# set all negative control input amounts to 0
+# this includes the spikes, which i fix in the next step
+mocks_idx_meta_genomecov_GH <- mocks_idx_meta_genomecov_GH %>% 
+    mutate(input_amount = case_when(
+        experiment == "negctrl" ~ 0,
+        TRUE ~ input_amount # mockevens already have input_amount values. keep them
+    )
+)
+
+### fix input DNA amounts for COI_spike species
+# For PlatesEF & GH, the amts are 0.2, 0.4, 0.8
+mocks_idx_meta_genomecov_GH <- mocks_idx_meta_genomecov_GH %>% 
+    mutate(input_amount = case_when(
+        mitogenome == "Lepidoptera_Bombycidae_Bombyx_mori_COI" ~ 0.2,
+        mitogenome == "Coleoptera_Mordellidae_COI" ~ 0.4,
+        mitogenome == "Coleoptera_Elateridae_COI" ~ 0.8,
+        TRUE ~ input_amount
+    )
+)
+
+### add input_DNA amounts for mockgradient input species
+mocks_idx_meta_genomecov_GH <- mocks_idx_meta_genomecov_GH %>% 
+    mutate(input_amount = case_when(
+        experiment == "mockgradient" & mitogenome == "PlateJ_C1_ACE4226_Diptera_Syrphidae_Helophilus_lapponicus_idba_spades_consensus" ~ 2699,
+        experiment == "mockgradient" & mitogenome == "PlateI_H5_AAC1834_Diptera_Syrphidae_Parasyrphus_tarsatus_refsoup_Concatenated" ~ 1597,
+        experiment == "mockgradient" & mitogenome == "PlateI_G3_AAC6088_Diptera_Syrphidae_Syrphus_torvus_idba_spades_consensus" ~ 1228,
+        experiment == "mockgradient" & mitogenome == "PlateI_G11_AAB1982_Diptera_Syrphidae_Helophilus_groenlandicus_spades_pilon" ~ 945,
+        experiment == "mockgradient" & mitogenome == "197_AAG1686_Diptera_Muscidae_Spilogona_micans_IDBA_pilon" ~ 727,
+        experiment == "mockgradient" & mitogenome == "MITO_18_AAZ5252_Diptera_Tachinidae_Peleteria_aenea_SPADESmeta_pilon" ~ 559,
+        experiment == "mockgradient" & mitogenome == "MITO_26_ACA4207_Diptera_Muscidae_Spilogona_monacantha_IDBApilon" ~ 430,
+        experiment == "mockgradient" & mitogenome == "MITO_11_ABZ1244_Diptera_Anthomyiidae_Zaphne_occidentalis_IDBApilon" ~ 331,
+        experiment == "mockgradient" & mitogenome == "MITO_7_AAM9104_Diptera_Muscidae_Spilogona_almqvistii_IDBApilon" ~ 255,
+        experiment == "mockgradient" & mitogenome == "PlateI_G4_AAM7340_Diptera_Scathophagidae_Gonarcticus_arcticus_spades_pilon" ~ 196,
+        experiment == "mockgradient" & mitogenome == "MITO_8_AAD7664_Diptera_Muscidae_Drymeia_segnis_IDBApilon" ~ 151,
+        experiment == "mockgradient" & mitogenome == "MITO_24_AAC6873_Diptera_Muscidae_Limnophora_groenlandica_IDBApilon" ~ 116,
+        experiment == "mockgradient" & mitogenome == "464_AAZ4195_Diptera_Syrphidae_Platycheirus_groenlandicus_IDBA_pilon" ~ 89,
+        experiment == "mockgradient" & mitogenome == "MITO_22_ACM5032_Diptera_Muscidae_Lophosceles_minimus_IDBApilon" ~ 69,
+        experiment == "mockgradient" & mitogenome == "PlateI_G10_AAG2440_Diptera_Anthomyiidae_Eutrichota_tunicata_blastSpades_pilon" ~ 53,
+        experiment == "mockgradient" & mitogenome == "PlateI_D9_AAV1117_Diptera_Scathophagidae_Scathophaga_apicalis_spades_pilon" ~ 41,
+        experiment == "mockgradient" & mitogenome == "34_ACE7762_Diptera_Muscidae_Spilogona_denudata_IDBA_pilon_COIDET_AAP9046_Diptera_Muscidae_Spilogona_megastoma" ~ 31,
+        experiment == "mockgradient" & mitogenome == "PlateI_H1_ACR5253_Diptera_Scathophagidae_Scathophaga_nigripalpis_spades_pilon" ~ 24,
+        experiment == "mockgradient" & mitogenome == "soup_AAM9110_Diptera_Muscidae_Spilogona_novaesibiriae_geneiousmapping" ~ 20,
+        TRUE ~ input_amount
+    )
+)
+
+### set all other mockgradient species to NA
+mocks_idx_meta_genomecov_GH <- mocks_idx_meta_genomecov_GH %>% 
+    mutate(input_amount = case_when(
+        experiment == "mockgradient" & is.na(input_amount) ~ 0,
+        TRUE ~ input_amount
+    )
+)
+
+# for mockeven experiment, set input_amount for non-COI_spike species and non-inputDNA species to 0
+mocks_idx_meta_genomecov_GH <- mocks_idx_meta_genomecov_GH %>% 
+    mutate(input_amount = case_when(
+        experiment == "mockeven" &  # mockeven experiment
+        str_detect(mitogenome, "_COI$") == FALSE &   # non-COI_spike species
+        !(mitogenome %in% c("PlateI_G11_AAB1982_Diptera_Syrphidae_Helophilus_groenlandicus_spades_pilon", "197_AAG1686_Diptera_Muscidae_Spilogona_micans_IDBA_pilon", "MITO_18_AAZ5252_Diptera_Tachinidae_Peleteria_aenea_SPADESmeta_pilon", "MITO_26_ACA4207_Diptera_Muscidae_Spilogona_monacantha_IDBApilon", "MITO_11_ABZ1244_Diptera_Anthomyiidae_Zaphne_occidentalis_IDBApilon", "PlateJ_C1_ACE4226_Diptera_Syrphidae_Helophilus_lapponicus_idba_spades_consensus", "PlateI_H5_AAC1834_Diptera_Syrphidae_Parasyrphus_tarsatus_refsoup_Concatenated", "MITO_8_AAD7664_Diptera_Muscidae_Drymeia_segnis_IDBApilon", "PlateI_G3_AAC6088_Diptera_Syrphidae_Syrphus_torvus_idba_spades_consensus", "MITO_7_AAM9104_Diptera_Muscidae_Spilogona_almqvistii_IDBApilon", "PlateI_G4_AAM7340_Diptera_Scathophagidae_Gonarcticus_arcticus_spades_pilon", "MITO_24_AAC6873_Diptera_Muscidae_Limnophora_groenlandica_IDBApilon", "464_AAZ4195_Diptera_Syrphidae_Platycheirus_groenlandicus_IDBA_pilon", "MITO_22_ACM5032_Diptera_Muscidae_Lophosceles_minimus_IDBApilon", "PlateI_G10_AAG2440_Diptera_Anthomyiidae_Eutrichota_tunicata_blastSpades_pilon", "PlateI_D9_AAV1117_Diptera_Scathophagidae_Scathophaga_apicalis_spades_pilon", "34_ACE7762_Diptera_Muscidae_Spilogona_denudata_IDBA_pilon_COIDET_AAP9046_Diptera_Muscidae_Spilogona_megastoma", "PlateI_H1_ACR5253_Diptera_Scathophagidae_Scathophaga_nigripalpis_spades_pilon", "soup_AAM9110_Diptera_Muscidae_Spilogona_novaesibiriae_geneiousmapping", "608_AAA9651_Araneae_Lycosidae_Pardosa_glacialis_IDBA_pilon")) ~ 0, # species not added to the mocks
+        TRUE ~ input_amount
+    )
+)
+```
+	
+       	
+```{r merge mocks_idx_meta_genomecov files for mitogenomes}
+names_EF <- names(mocks_idx_meta_genomecov_EF)
+names_GH <- names(mocks_idx_meta_genomecov_GH)
+
+identical(names_EF, names_GH) # TRUE
+
+# bind rows together
+mocks_idx_meta_genomecov_EFGH <- bind_rows(mocks_idx_meta_genomecov_EF, mocks_idx_meta_genomecov_GH)
+
+# confirm 311 (mitogenomes + spikes)
+mocks_idx_meta_genomecov_EFGH %>% 
+    distinct(mitogenome) %>% 
+    count()  
+
+mocks_idx_meta_genomecov_EFGH_mitogenomes <- mocks_idx_meta_genomecov_EFGH
+
+# view names
+names(mocks_idx_meta_genomecov_EFGH_mitogenomes)
+# [1] "sample"       "plate"        "experiment"   "run"          "mitogenome"   "PC"        
+# [7] "mapped_reads" "input_amount" "plate_well"
+
+rm(mocks_idx_meta_genomecov_EF, mocks_idx_meta_genomecov_GH, mocks_idx_meta_genomecov_EFGH)
+```
+
+
+```{r save the files for downstream analysis}
+barcodesoutputidxstatstabulatefolder <- "../../PlatesABA2B2EFGH/minimap2_406barcodes_20190116" 
+mitogenomesoutputidxstatstabulatefolder <- "../../PlatesABA2B2EFGH/minimap2_308mitogenomes_20190115"
+
+# write_tsv(mocks_idx_meta_genomecov_EFGH_barcodes, file.path(barcodesoutputidxstatstabulatefolder, "mocks_idx_meta_genomecov_EFGH_minimap2_20190116_406barcodes.txt")) # output file for merging with the other RUN outputs
+# # 
+# write_tsv(mocks_idx_meta_genomecov_EFGH_mitogenomes, file.path(mitogenomesoutputidxstatstabulatefolder, "mocks_idx_meta_genomecov_EFGH_minimap2_20190115_308mitogenomes.txt")) # output file for merging with the other RUN outputs
+
+# version that gzips the output file if it is too big
+# write_tsv(mocks_idx_meta_genomecov_EFGH_mitogenomes, gzfile(file.path(mitogenomesoutputidxstatstabulatefolder, "mocks_idx_meta_genomecov_EFGH_minimap2_20190115_308mitogenomes.txt"))) # output file for merging with the other RUN outputs
+```
+
+
+END

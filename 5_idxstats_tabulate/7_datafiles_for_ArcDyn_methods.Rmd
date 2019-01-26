@@ -1,0 +1,957 @@
+---
+title: "datafiles_for_ArcDyn_methods_paper"
+author: "Douglas Yu"
+date: "17/01/2019"
+output: html_document
+---
+This code takes the output files from 5_merge_idx_meta_genomecov.Rmd and combines with the taxonomy data to create input files for the environmental and mock-sample analyses
+
+setwd("~/Dropbox/Working_docs/Roslin_Greenland/2017/bulk_samples/ArcDyn_scripts/5_idxstats_tabulate")
+
+```{r load packages}
+library(tidyverse)  
+library(readxl) # read excel spreadsheets
+library(hablar) # data type conversion
+library(arsenal) # utilities
+```
+
+This file provides the total number of reads per sample, used to calculate FST instead of FSL
+```{r reformat seqkit stats output}
+# A2B2 resequenced (most of) the same samples as AB, but fortunately, Earlham Institute coded the AB samples as IPO3916/7_A1 and the A2B2 samples as PlateA/B_A1. So I can use this column to join with the other metadata  
+pathtofastqseqdata = "../.."  
+ 
+# PlatesAB 
+# sample identifier in soupdata has form IPO3916_A1, where IPO3916 is PlateA, IPO3917 is PlateB
+fastq_read_counts_PlatesAB <- read_table(file.path( "../../../../2016/bulk_samples/PlatesAB_EI_20160512/fastq_read_counts_PlatesAB.txt"))
+
+fastq_read_counts_PlatesAB <- fastq_read_counts_PlatesAB %>%
+    tidyr::separate(file, into = c(NA, "gpfs", "home", "b042", "greenland", "plates", "platessub", "BWA", "sample", "fastqfile"), sep = "/", remove = TRUE) %>%
+    mutate_at("sample", str_remove, "Sample_") %>% # remove "Sample_" from beginning of string
+    dplyr::select(sample, tot_num_seqs = num_seqs) %>%
+    dplyr::group_by(sample) %>%
+    summarise(tot_num_seqs = sum(tot_num_seqs))
+
+# PlatesA2B2
+# sample identifier in soupdata has form PlateA_A1
+fastq_read_counts_PlatesA2B2 <- read_table(file.path(pathtofastqseqdata, "PlatesA2B2/fastq_read_counts_PlatesA2B2.txt"))
+
+fastq_read_counts_PlatesA2B2 <- fastq_read_counts_PlatesA2B2 %>%
+    tidyr::separate(file, into = c(NA, "gpfs", "home", "b042", "greenland", "plates", "platessub", "BWA", "sample", "fastqfile"), sep = "/", remove = TRUE) %>%
+    mutate_at("sample", str_remove, "Sample_PRO1322_") %>% # remove "Sample_PRO1322_" from beginning of string
+    dplyr::select(sample, tot_num_seqs = num_seqs) %>%
+    dplyr::group_by(sample) %>%
+    summarise(tot_num_seqs = sum(tot_num_seqs))
+
+# PlatesEF
+fastq_read_counts_PlatesEF <- read_table(file.path(pathtofastqseqdata, "PlatesEF/fastq_read_counts_PlatesEF.txt"))
+
+fastq_read_counts_PlatesEF <- fastq_read_counts_PlatesEF %>%
+    tidyr::separate(file, into = c(NA, "gpfs", "home", "b042", "greenland", "plates", "platessub", "BWA", "sample", "fastqfile"), sep = "/", remove = TRUE) %>%
+    mutate_at("sample", str_remove, "_[ACGT]{9}-[ACGT]{6}") %>% # remove index sequence from end of string, e.g. _TAGGTTAGG-GCCAAT
+    dplyr::select(sample, tot_num_seqs = num_seqs) %>%
+    dplyr::group_by(sample) %>%
+    summarise(tot_num_seqs = sum(tot_num_seqs))
+
+# PlatesGH
+fastq_read_counts_PlatesGH <- read_table(file.path(pathtofastqseqdata, "PlatesGH/fastq_read_counts_PlatesGH.txt"))
+
+fastq_read_counts_PlatesGH <- fastq_read_counts_PlatesGH %>%
+    tidyr::separate(file, into = c(NA, "gpfs", "home", "b042", "greenland", "plates", "platessub", "BWA", "sample", "fastqfile"), sep = "/", remove = TRUE) %>%
+    mutate_at("sample", str_remove, "Sample_PRO1747_") %>% # remove index sequence from end of string, Sample_PRO1747_
+    dplyr::select(sample, tot_num_seqs = num_seqs) %>%
+    dplyr::group_by(sample) %>%
+    summarise(tot_num_seqs = sum(tot_num_seqs))
+
+fastq_read_counts_PlatesABA2B2EFGH <- bind_rows(fastq_read_counts_PlatesAB, fastq_read_counts_PlatesA2B2, fastq_read_counts_PlatesEF, fastq_read_counts_PlatesGH)
+
+# sanity check: should have: "IPO3916" "IPO3917" "PlateA"  "PlateB"  "PlateE"  "PlateF"  "PlateG"  "PlateH"
+fastq_read_counts_PlatesABA2B2EFGH %>% 
+    dplyr::select(sample) %>% 
+    tidyr::separate(sample, sep = "_", into = c("sampleprefix", "samplesuffix")) %>%
+    dplyr::count(sampleprefix) %>% 
+    dplyr::arrange(sampleprefix)
+
+rm(fastq_read_counts_PlatesAB, fastq_read_counts_PlatesA2B2, fastq_read_counts_PlatesEF, fastq_read_counts_PlatesGH) 
+```
+
+Load saved idx_meta_genomecov_ABA2B2EFGH files, barcodes and mitogenomes
+```{r}
+barcodesoutputidxstatstabulatefolder <- "../../PlatesABA2B2EFGH/minimap2_406barcodes_20190116" 
+mitogenomesoutputidxstatstabulatefolder <- "../../PlatesABA2B2EFGH/minimap2_308mitogenomes_20190115"
+
+idx_meta_genomecov_ABA2B2EFGH_barcodes <- read_delim(file.path(barcodesoutputidxstatstabulatefolder, "idx_meta_genomecov_ABA2B2EFGH_minimap2_20190116_406barcodes.txt"), delim = "\t", escape_double = FALSE, trim_ws = TRUE)
+
+idx_meta_genomecov_ABA2B2EFGH_mitogenomes <- read_delim(file.path(mitogenomesoutputidxstatstabulatefolder, "idx_meta_genomecov_ABA2B2EFGH_minimap2_20190115_308mitogenomes.txt"), delim = "\t", escape_double = FALSE, trim_ws = TRUE)
+```
+
+Make table of barcode names after running the above for the barcode idx_meta_genomecov files
+```{r}
+# idx_meta_genomecov_ABA2B2EFGH_barcodes <- idx_meta_genomecov_ABA2B2EFGH
+#  
+# rm(idx_meta_genomecov_A2B2, idx_meta_genomecov_AB, idx_meta_genomecov_EF, idx_meta_genomecov_GH, idx_meta_genomecov_ABA2B2EFGH) 
+
+# make species table from the Barcode names
+barcodes <- idx_meta_genomecov_ABA2B2EFGH_barcodes %>% 
+    dplyr::select(COI = mitogenome, COI_Species, COI_length = mt_length) %>% 
+    dplyr::filter(COI_Species != "COI_Spike") %>% # remove COI_spike species 
+    dplyr::select(-COI_Species) %>% # remove column indicating COI_spike species 
+    distinct(COI, .keep_all = TRUE) %>% # keep only distinct values of mitogenome, should return 406 
+    mutate(BOLD = COI) %>% # make new BOLD column with mitogenome 
+    mutate(BOLD = str_extract(BOLD, "[A-Z]{3}[0-9]{4}$")) %>% # extract only the BOLD number
+    mutate(BOLD = str_c("BOLD:", BOLD)) # add "BOLD:" as prefix. Have to do it this way because some of the BOLD numbers are not prefixed by "BOLD:"
+
+# extract individual taxonomic ranks and re-merge Species and BOLD_ID. Species and BOLD_ID are messy because the epithets can include multiple elements
+# cf_extrema_ACI8982, sp_AAF9271, tridactylus_ACH0172, cf_extrema_ACI8982, AAN6605_NA
+# the AAN6605_NA is when there was no species epithet in the original name, not even "sp"
+barcodes <- barcodes %>% 
+    tidyr::separate(COI, c("Order", "Family", "Genus", "Species", "BOLD_ID"), sep = "_", remove = FALSE, extra = "merge") %>% 
+    tidyr::unite("Species_BOLD", c("Species", "BOLD_ID"))
+
+# the info line of the COI_Barcode fasta file is already well formatted: 
+    # Diptera_Anthomyiidae_Zaphne_divisa_BOLD:AAG2441
+    # Even this one can be parsed by first keeping together (extra = "merge") everything after the fourth column (tundrica_BOLD:AAG1723). then merge the Species and BOLD_ID  columns (frontata_tundrica_BOLD:AAG1723)
+    # Diptera_Anthomyiidae_Zaphne_frontata_tundrica_BOLD:AAG1723
+```
+
+Make table of mitogenome names
+```{r}
+# idx_meta_genomecov_ABA2B2EFGH_mitogenomes <- idx_meta_genomecov_ABA2B2EFGH
+#  
+# rm(idx_meta_genomecov_A2B2, idx_meta_genomecov_AB, idx_meta_genomecov_EF, idx_meta_genomecov_GH, idx_meta_genomecov_ABA2B2EFGH) 
+
+# taxonomyfilepath <- "~/Dropbox/Working_docs/Roslin_Greenland/2017/bulk_samples/ArcDyn_scripts/6_referenceseqs_metadata/mitogenomes_barcodes"
+taxonomyfilepath <- "../6_referenceseqs_metadata/mitogenomes_barcodes"
+taxonomyfile <- "Species_for_mitogenome_sequencing_20190123.xlsx"
+
+mitotaxonomies <- read_excel(file.path(taxonomyfilepath, taxonomyfile), sheet = "mitogenome_database", na = "NA") %>% 
+    dplyr::filter(COI_CytB_sanger_sequenced == "no" &  mitogenome_status != "failed") # 308
+# mitogenome_status == "failed" indicates specimens that failed sequencing at Copenhagen and were then sent to EI. These species are given two rows. I only want the EI row
+# COI_CytB_sanger_sequenced == "no" indicates specimens for which we did not do COI and cytB Sanger sequencing instead of mitogenome assembly (n = 41)
+
+mitotaxonomies <- mitotaxonomies %>% 
+    dplyr::select(Yinqiu_mitogenome_fastaname, Order, Family, Genus, Species_BOLD)
+
+mitotaxonomies <- mitotaxonomies %>% 
+    tidyr::separate(Species_BOLD, sep = " ", into = c("Genus2", "Species_BOLD")) %>% 
+    dplyr::select(-Genus2)
+# ifelse(mitotaxonomies$Genus == mitotaxonomies$Genus2, 1, 0) # Genus and Genus2 are the same, so i can delete Genus2
+
+mitotaxonomies$Species_BOLD <- str_replace(mitotaxonomies$Species_BOLD, "_BOLD", "__BOLD") # delimit species epithet and BOLD:number
+
+mitotaxonomies <- mitotaxonomies %>% 
+    tidyr::separate(Species_BOLD, sep = "__", into = c("Species", "BOLD")) 
+# separate species epithet and BOLD:number
+
+# sanity check
+mitotaxonomies %>% distinct(BOLD) %>% count() # 308 unique BOLD numbers
+
+mitotaxonomies <-  left_join(idx_meta_genomecov_ABA2B2EFGH_mitogenomes, mitotaxonomies, by = c("mitogenome" = "Yinqiu_mitogenome_fastaname")) %>% 
+    dplyr::filter(COI_Species != "COI_Spike") %>% # remove COI_spike species
+    dplyr::select(-COI_Species) # remove column indicating COI_spike species
+
+# names(mitotaxonomies)
+
+mitotaxonomies <- mitotaxonomies %>% 
+    dplyr::select(BOLD, Order, Family, Genus, mitogenome, mt_length) %>% 
+    distinct(BOLD, .keep_all = TRUE) # merge and reduce to 308 unique mitogenomes
+```
+
+# species dataset #
+Make species database by joining barcodes and mitotaxonomies
+```{r}
+names(barcodes) 
+# [1] "COI"          "Order"        "Family"       "Genus"        "Species_BOLD" "COI_length"  
+# [7] "BOLD"        
+names(mitotaxonomies)
+# [1] "BOLD"       "Order"      "Family"     "Genus"      "mitogenome" "mt_length" 
+
+# The Order, Family, Genus, and Species names can be different between the barcode and mitogenome names (e.g. because of situations where the same BOLDID is given two provisional genus names, but only one is present in one of the databases). We use the BOLDID as the matching index, so we have some flexibility about which name to use. I am keeping the barcode Latin names (*.x) as this list is longer.
+species <- left_join(barcodes, mitotaxonomies, by = c("BOLD" = "BOLD")) %>%
+    dplyr::select(BOLD, Order = Order.x, Family = Family.x, Genus = Genus.x, Species_BOLD, mitogenome, COI, mt_length, COI_length)
+    
+# by = c("BOLD", "Order", "Family", "Genus"), 
+species$sp <- seq(nrow(species))
+species$sp <- str_c("sp", species$sp)
+
+# mark some species for removal before environmental analyses
+species <- species %>% 
+    mutate(omit_from_env = case_when(
+        Order %in% c("Sarcoptiformes", "Trombidiformes", "Entomobryomorpha", "Neelipleona", "Poduromorpha", "Symphypleona") ~ "Omit",
+        TRUE ~ "Keep"
+    )
+)
+
+species <- species %>% 
+    dplyr::select(sp, everything(), omit_from_env)
+
+# rm(barcodes, mitotaxonomies)
+
+# example code to remove the omit_from_env species and the column
+# species <- species %>% 
+#     dplyr::filter(omit_from_env == "Keep") %>%  # remove the rows with these species
+#     dplyr::select(-omit_from_env)   # remove this column
+```
+
+# spikes dataset #
+```{r}
+spikes <- idx_meta_genomecov_ABA2B2EFGH_barcodes %>% 
+    dplyr::select(mitogenome, COI_Species) %>% 
+    dplyr::filter(COI_Species == "COI_Spike") %>% 
+    dplyr::select(mitogenome) %>% 
+    distinct()
+    
+spikes$species <- seq(nrow(spikes)) 
+spikes$species <- str_c("spike", spikes$species) 
+
+spikes <- spikes %>% dplyr::select(species, full.name = mitogenome)
+```
+
+# env_design dataset #  Works for both barcodes and mitogenomes
+```{r}
+env_design <- idx_meta_genomecov_ABA2B2EFGH_barcodes %>% 
+    dplyr::mutate(run = EI_RUN) %>%  
+    dplyr::mutate(EI_RUN = str_remove(EI_RUN, "idx_meta_genomecov_")) %>%  
+    dplyr::mutate(DateTrapRun = str_c(DateTrap, "_", EI_RUN)) %>% 
+    dplyr::mutate(lysis_buffer_proportion = 1 / lysis_buffer_proportion) %>% # for downstream analysis
+    dplyr::select(sample = DateTrapRun, date = Date, trap = Trap, run, lysis_buffer_proportion, mitogenome, COI_Species) %>% 
+    dplyr::filter(COI_Species == "COI_Spike") %>% 
+    dplyr::select(-COI_Species)
+
+env_design <- env_design %>% 
+    mutate(
+    inputDNA = case_when(
+        mitogenome == "Lepidoptera_Bombycidae_Bombyx_mori_COI" & run == "idx_meta_genomecov_AB" ~ 10,
+        mitogenome == "Lepidoptera_Bombycidae_Bombyx_mori_COI" & run == "idx_meta_genomecov_A2B2" ~ 10,
+        mitogenome == "Lepidoptera_Bombycidae_Bombyx_mori_COI" & run == "idx_meta_genomecov_EF" ~ 0.2,
+        mitogenome == "Lepidoptera_Bombycidae_Bombyx_mori_COI" & run == "idx_meta_genomecov_GH" ~ 0.2
+    )
+)
+env_design <- env_design %>% 
+    mutate(
+    inputDNA = case_when(
+        mitogenome == "Coleoptera_Mordellidae_COI" & run == "idx_meta_genomecov_AB" ~ 20,
+        mitogenome == "Coleoptera_Mordellidae_COI" & run == "idx_meta_genomecov_A2B2" ~ 20,
+        mitogenome == "Coleoptera_Mordellidae_COI" & run == "idx_meta_genomecov_EF" ~ 0.4,
+        mitogenome == "Coleoptera_Mordellidae_COI" & run == "idx_meta_genomecov_GH" ~ 0.4,
+        TRUE ~ inputDNA
+    )
+)
+env_design <- env_design %>% 
+    mutate(
+    inputDNA = case_when(
+        mitogenome == "Coleoptera_Elateridae_COI" & run == "idx_meta_genomecov_AB" ~ 40,
+        mitogenome == "Coleoptera_Elateridae_COI" & run == "idx_meta_genomecov_A2B2" ~ 40,
+        mitogenome == "Coleoptera_Elateridae_COI" & run == "idx_meta_genomecov_EF" ~ 0.8,
+        mitogenome == "Coleoptera_Elateridae_COI" & run == "idx_meta_genomecov_GH" ~ 0.8,
+        TRUE ~ inputDNA
+    )
+)
+
+env_design <- env_design %>% 
+    tidyr::spread(mitogenome, inputDNA) %>% 
+    dplyr::select(sample, date, trap, run, lysis_buffer_proportion, spike1 = Lepidoptera_Bombycidae_Bombyx_mori_COI, spike2 = Coleoptera_Mordellidae_COI, spike3 = Coleoptera_Elateridae_COI) %>% 
+    arrange(run, date, trap)
+ 
+names(env_design) 
+```
+
+# env_seq_depth dataset #  Works for both barcodes and mitogenomes
+```{r}
+env_seq_depth <- idx_meta_genomecov_ABA2B2EFGH_barcodes %>% 
+    dplyr::mutate(run = EI_RUN) %>%  
+    dplyr::mutate(EI_RUN = str_remove(EI_RUN, "idx_meta_genomecov_")) %>% 
+    dplyr::mutate(DateTrapRun = str_c(DateTrap, "_", EI_RUN)) %>% 
+    dplyr::select(DateTrapRun, sample) %>% 
+    distinct(DateTrapRun, .keep_all = TRUE)
+
+env_seq_depth <- left_join(env_seq_depth, fastq_read_counts_PlatesABA2B2EFGH) %>% 
+    dplyr::select(-sample) %>% 
+    dplyr::select(sample = DateTrapRun, mitogenome_seqs = tot_num_seqs) %>% 
+    arrange(sample) 
+```
+
+# env_data_mitogenome dataset #
+```{r}
+env_data_mitogenome <- idx_meta_genomecov_ABA2B2EFGH_mitogenomes %>% 
+    dplyr::mutate(run = EI_RUN) %>% 
+    dplyr::mutate(EI_RUN = str_remove(EI_RUN, "idx_meta_genomecov_")) %>% 
+    dplyr::mutate(DateTrapRun = str_c(DateTrap, "_", EI_RUN)) %>% 
+    dplyr::select(DateTrapRun, mitogenome, PC, mapped_reads, COI_Species)
+
+env_data_mitogenome <- left_join(env_data_mitogenome, species) # this will generate extra Order.y, Family.y, Genus.y columns from the species dataframe. We ignore them
+
+env_data_mitogenome <- env_data_mitogenome %>% 
+    dplyr::select(sample = DateTrapRun, sp, PC, mapped_reads, mitogenome, COI_Species)
+
+spikes # table of COI_spike species, to refer to for the code below
+
+# add spike1,2,3 to sp column
+env_data_mitogenome <- env_data_mitogenome %>% 
+    mutate(
+    sp = case_when(
+        mitogenome == "Lepidoptera_Bombycidae_Bombyx_mori_COI" ~ "spike1",
+        mitogenome == "Coleoptera_Mordellidae_COI" ~ "spike2",
+        mitogenome == "Coleoptera_Elateridae_COI" ~ "spike3",
+        TRUE ~ as.character(sp)
+    )
+)
+
+env_data_mitogenome <- env_data_mitogenome %>% 
+    dplyr::filter(mapped_reads > 0) %>%  
+    dplyr::select(sample, sp, PC, mapped_reads) 
+
+env_data_mitogenome <- env_data_mitogenome %>% 
+    mutate(
+        PC = case_when(
+            sp == "spike1" ~ NA_real_,
+            sp == "spike2" ~ NA_real_,
+            sp == "spike3" ~ NA_real_,
+            TRUE ~ PC
+        )
+    )
+```
+
+# env_data_COI dataset #
+```{r}
+env_data_COI <- idx_meta_genomecov_ABA2B2EFGH_barcodes %>% 
+    dplyr::mutate(run = EI_RUN) %>% 
+    dplyr::mutate(EI_RUN = str_remove(EI_RUN, "idx_meta_genomecov_")) %>% 
+    dplyr::mutate(DateTrapRun = str_c(DateTrap, "_", EI_RUN)) %>% 
+    dplyr::select(DateTrapRun, mitogenome, PC, mapped_reads, COI_Species)
+
+env_data_COI <- left_join(env_data_COI, species, by = c("mitogenome" = "COI")) # this will generate extra Order.y, Family.y, Genus.y columns from the species dataframe. We ignore them
+
+env_data_COI <- env_data_COI %>% 
+    dplyr::select(sample = DateTrapRun, sp, PC, mapped_reads, mitogenome, COI_Species)
+
+spikes # table of COI_spike species, to refer to for the code below
+
+# add spike1,2,3 to sp column
+env_data_COI <- env_data_COI %>%  
+    mutate(
+    sp = case_when(
+        mitogenome == "Lepidoptera_Bombycidae_Bombyx_mori_COI" ~ "spike1",
+        mitogenome == "Coleoptera_Mordellidae_COI" ~ "spike2",
+        mitogenome == "Coleoptera_Elateridae_COI" ~ "spike3",
+        TRUE ~ as.character(sp)
+    )
+)
+
+env_data_COI <- env_data_COI %>% 
+    dplyr::filter(mapped_reads > 0) %>% 
+    dplyr::select(sample, sp, PC, mapped_reads) 
+
+env_data_COI <- env_data_COI %>% 
+    mutate(
+        PC = case_when(
+            sp == "spike1" ~ NA_real_,
+            sp == "spike2" ~ NA_real_,
+            sp == "spike3" ~ NA_real_,
+            TRUE ~ PC
+        )
+    )
+```
+
+
+Load saved mocks_idx_meta_genomecov files
+```{r}
+barcodesoutputidxstatstabulatefolder <- "../../PlatesABA2B2EFGH/minimap2_406barcodes_20190116" 
+mitogenomesoutputidxstatstabulatefolder <- "../../PlatesABA2B2EFGH/minimap2_308mitogenomes_20190115"
+
+mocks_idx_meta_genomecov_EFGH_barcodes <- read_delim(file.path(barcodesoutputidxstatstabulatefolder, "mocks_idx_meta_genomecov_EFGH_minimap2_20190116_406barcodes.txt"), delim = "\t", escape_double = FALSE, trim_ws = TRUE)
+
+mocks_idx_meta_genomecov_EFGH_mitogenomes <- read_delim(file.path(mitogenomesoutputidxstatstabulatefolder, "mocks_idx_meta_genomecov_EFGH_minimap2_20190115_308mitogenomes.txt"), delim = "\t", escape_double = FALSE, trim_ws = TRUE)
+
+mocks_idx_meta_genomecov_EFGH_barcodes <-  mocks_idx_meta_genomecov_EFGH_barcodes %>%  
+    mutate(
+        sample = case_when(
+            sample == "PlateGH_COI_1_negative_control" ~ "PlateGH_negative_control_1",
+            sample == "PlateGH_COI_2_negative_control" ~ "PlateGH_negative_control_2",
+            TRUE ~ as.character(sample)
+        )
+    )
+
+mocks_idx_meta_genomecov_EFGH_barcodes$sample %>% unique()
+
+mocks_idx_meta_genomecov_EFGH_mitogenomes <-  mocks_idx_meta_genomecov_EFGH_mitogenomes %>% 
+    mutate(
+        sample = case_when(
+            sample == "PlateGH_COI_1_negative_control" ~ "PlateGH_negative_control_1",
+            sample == "PlateGH_COI_2_negative_control" ~ "PlateGH_negative_control_2",
+            TRUE ~ as.character(sample)
+        )
+    )
+
+mocks_idx_meta_genomecov_EFGH_mitogenomes$sample %>% unique() 
+```
+
+# mock_design # Works for both barcodes and mitogenomes
+```{r}
+mock_design <- left_join(mocks_idx_meta_genomecov_EFGH_barcodes, species, by = c("mitogenome" = "COI")) # I can use either the barcodes or mitogenomes dataset 
+
+spikes # table of COI_spike species, to refer to for the code below
+
+# add spike1,2,3 to sp column
+mock_design <- mock_design %>% 
+    mutate(
+    sp = case_when(
+        mitogenome == "Lepidoptera_Bombycidae_Bombyx_mori_COI" ~ "spike1",
+        mitogenome == "Coleoptera_Mordellidae_COI" ~ "spike2",
+        mitogenome == "Coleoptera_Elateridae_COI" ~ "spike3",
+        TRUE ~ as.character(sp)
+    )
+)
+
+mock_design <- mock_design %>% 
+    dplyr::select(sample, plate, experiment, run, input_amount, input_sp = sp) %>% 
+    dplyr::filter(input_amount > 0) %>% 
+    arrange(experiment, plate, sample, run)
+```
+
+# mock_data_mitogenome #
+```{r}
+names(mocks_idx_meta_genomecov_EFGH_mitogenomes)
+ 
+mock_data_mitogenome <- left_join(mocks_idx_meta_genomecov_EFGH_mitogenomes, species, by = c("mitogenome" = "mitogenome"))  
+
+spikes # table of COI_spike species, to refer to for the code below
+
+# add spike1,2,3 to sp column
+mock_data_mitogenome <- mock_data_mitogenome %>% 
+    mutate(
+    sp = case_when(
+        mitogenome == "Lepidoptera_Bombycidae_Bombyx_mori_COI" ~ "spike1",
+        mitogenome == "Coleoptera_Mordellidae_COI" ~ "spike2",
+        mitogenome == "Coleoptera_Elateridae_COI" ~ "spike3",
+        TRUE ~ as.character(sp)
+    )
+)
+
+mock_data_mitogenome <- mock_data_mitogenome %>% 
+    dplyr::select(sample, plate, experiment, run, sp, PC, mapped_reads) %>% 
+    arrange(experiment, plate, sample, run)
+```
+
+# mock_data_COI #
+```{r}
+names(mocks_idx_meta_genomecov_EFGH_barcodes)
+ 
+mock_data_COI <- left_join(mocks_idx_meta_genomecov_EFGH_barcodes, species, by = c("mitogenome" = "COI")) 
+
+spikes # table of COI_spike species, to refer to for the code below
+
+# add spike1,2,3 to sp column
+mock_data_COI <- mock_data_COI %>% 
+    mutate(
+    sp = case_when(
+        mitogenome == "Lepidoptera_Bombycidae_Bombyx_mori_COI" ~ "spike1",
+        mitogenome == "Coleoptera_Mordellidae_COI" ~ "spike2",
+        mitogenome == "Coleoptera_Elateridae_COI" ~ "spike3",
+        TRUE ~ as.character(sp)
+    )
+)
+
+mock_data_COI <- mock_data_COI %>% 
+    dplyr::select(sample, plate, experiment, run, sp, PC, mapped_reads) %>% 
+    arrange(experiment, plate, sample, run)
+```
+
+# mock_seq_depth dataset #  Works for both barcodes and mitogenomes
+```{r}
+names(mocks_idx_meta_genomecov_EFGH_barcodes)
+
+mock_seq_depth <- mocks_idx_meta_genomecov_EFGH_barcodes %>% 
+    dplyr::select(sample, plate_well) %>% 
+    distinct(sample, .keep_all = TRUE) %>% 
+    arrange(sample)
+
+mock_seq_depth <- left_join(mock_seq_depth, fastq_read_counts_PlatesABA2B2EFGH, by = c("plate_well" = "sample")) %>% 
+    dplyr::select(-plate_well, mitogenome_seqs = tot_num_seqs) %>% 
+    arrange(sample) 
+```
+
+Save datasets into a single RData file
+```{r}
+setwd("~/Dropbox/Working_docs/Roslin_Greenland/2018/manuscript_methods/20190124_Ecoletts/Rcode/Rdata")
+getwd()
+
+save(species, spikes, mock_design, mock_data_mitogenome, mock_data_COI,
+     env_design, env_data_mitogenome, env_data_COI, mock_seq_depth, env_seq_depth,
+     file = "input_data_step5_20190124.1.RData")
+```
+
+END
+
+Loading input_data_step5_20190120.RData, which is correctly formatted for downstream statistical analysis. I use these datafiles as my template for the above code. For viewing convenience, I then put these files into an Excel spreadsheet (saved to the manuscript_methods/ folder)
+```{r load input_data_step5_20190120.RData, eval=FALSE}
+pathtoexampledata = "~/Dropbox/Working_docs/Roslin_Greenland/2018/manuscript_methods/EcoLetts_20190120/Rcode/Rdata"  
+
+load(file.path(pathtoexampledata, "input_data_step5_20190120.RData")) # new version of data tables after re-running all steps of the pipeline, to confirm reproducibility and to make a cleaner dataset for uploading. 
+
+tibble(env_data_COI)
+tibble(env_data_mitogenome)
+tibble(env_design)
+tibble(env_seq_depth)  # tot_num_seqs for those samples
+tibble(mock_data_COI)
+tibble(mock_data_mitogenome)
+tibble(mock_design)
+tibble(mock_seq_depth)  # tot_num_seqs for those samples
+tibble(species)
+tibble(spikes)
+
+# to make excel workbook so that i can see the target dataframes easily
+# write_tsv(env_data_COI, "env_data_COI.tsv")
+# write_tsv(env_data_mitogenome, "env_data_mitogenome.tsv")
+# write_tsv(env_design, "env_design.tsv")
+# write_tsv(env_seq_depth, "env_seq_depth.tsv")  # tot_num_seqs for those samples
+# write_tsv(mock_data_COI, "mock_data_COI.tsv")
+# write_tsv(mock_data_mitogenome, "mock_data_mitogenome.tsv")
+# write_tsv(mock_design, "mock_design.tsv")
+# write_tsv(mock_seq_depth, "mock_seq_depth.tsv")  # tot_num_seqs for those samples
+# write_tsv(species, "species.tsv")
+# write_tsv(spikes, "spikes.tsv")
+```
+
+
+
+Previous code. Ignore this
+
+```{r soupdata308, eval=FALSE}
+# mapping outputs 
+soupdata <- read_tsv(file.path(pathto20190115data, "minimap2_308mitogenomes_20190115/idx_meta_genomecov_ABA2B2EFGH_minimap2_20190115_308mitogenomes.txt.zip"))
+
+## sanity check:  should have: "IPO3916" "IPO3917" "PlateA"  "PlateB"  "PlateE"  "PlateF"  "PlateG"  "PlateH"
+soupdata %>% 
+    dplyr::select(sample) %>% 
+    tidyr::separate(sample, sep = "_", into = c("sampleprefix", "samplesuffix")) %>% 
+    dplyr::count(sampleprefix) %>% 
+    arrange(sampleprefix)
+
+names(soupdata)
+
+#  [1] "EI_RUN"                                      "Date"                                       
+#  [3] "Plot"                                        "Trap"                                       
+#  [5] "Week"                                        "mitogenome"                                 
+#  [7] "Order"                                       "Family"                                     
+#  [9] "Genus"                                       "Species_BOLD"                               
+# [11] "mapped_reads"                                "mapped_reads_COI_corr"                      
+# [13] "mapped_reads_COI_lysis_corr"                 "sum_coverage"                               
+# [15] "mean_coverage"                               "stddev"                                     
+# [17] "coefvar"                                     "pct_coverage"                               
+# [19] "samtools_filter"                             "mt_length"                                  
+# [21] "lysis_buffer_orig_total_ul"                  "lysis_buffer_purified_ul"                   
+# [23] "lysis_buffer_proportion"                     "Lepidoptera_Bombycidae_Bombyx_mori_10ng_COI"
+# [25] "Coleoptera_Mordellidae_20ng_COI"             "Coleoptera_Elateridae_40ng_COI"             
+# [27] "COI_corr_components"                         "COI_corr"                                   
+# [29] "Concentration_ng_per_ul"                     "Sample_volume_ul"                           
+# [31] "x.260_280_ratio"                             "sample"                                     
+# [33] "ArcDyn_Plate_name"                           "EI_Plate_name"                              
+# [35] "well"                                        "Sample_alias"                               
+# [37] "TGAC_barcode"                                "pathname"                                   
+# [39] "pathname_genomecov"                          "Full_name_of_the_sample"                    
+# [41] "DateTrapEIRUN"                              
+
+
+
+# mitogenomes_data
+mitogenomes_data <- soupdata %>% dplyr::select(mitogenome, mt_length, Order, Family, Genus, Species_BOLD)
+
+# env_design
+## env_design, select sample, Date,
+env_design <- soupdata %>% dplyr::select(sample = DateTrapEIRUN, date = Date, trap = Trap, run = EI_RUN, lysis_buffer_orig_total_ul, lysis_buffer_purified_ul, lysis_buffer_proportion)
+
+## spike input DNA amount
+## Plates AB & A2B2:  10, 20, 40 ng;  Plates EF & GH:  0.2, 0.4, 0.8 ng, for Bombycidae, Mordellidae, Elateridae, respectively
+env_design <- env_design %>% mutate(
+    Lepidoptera_Bombycidae_Bombyx_mori_COI = case_when(
+        run == "idx_meta_genomecov_AB" ~ 10,
+        run == "idx_meta_genomecov_A2B2" ~ 10,
+        run == "idx_meta_genomecov_EF" ~ 0.2,
+        run == "idx_meta_genomecov_GH" ~ 0.2
+    )
+)
+env_design <- env_design %>% mutate(
+    Coleoptera_Mordellidae_COI = case_when(
+        run == "idx_meta_genomecov_AB" ~ 20,
+        run == "idx_meta_genomecov_A2B2" ~ 20,
+        run == "idx_meta_genomecov_EF" ~ 0.4,
+        run == "idx_meta_genomecov_GH" ~ 0.4
+    )
+)
+env_design <- env_design %>% mutate(
+    Coleoptera_Elateridae_COI = case_when(
+        run == "idx_meta_genomecov_AB" ~ 40,
+        run == "idx_meta_genomecov_A2B2" ~ 40,
+        run == "idx_meta_genomecov_EF" ~ 0.8,
+        run == "idx_meta_genomecov_GH" ~ 0.8
+    )
+)
+
+# summarise env_design
+# env_design_summarised <- env_design %>%
+#     dplyr::group_by(sample) %>%
+#     dplyr::summarise(
+#         date = first(date),
+#         trap = first(trap),
+#         run = first(run),
+#         lysis_buffer_orig_total_ul = first(lysis_buffer_orig_total_ul),
+#         lysis_buffer_purified_ul = first(lysis_buffer_purified_ul),
+#         lysis_buffer_proportion = first(lysis_buffer_proportion),
+#         Lepidoptera_Bombycidae_Bombyx_mori_COI = first(Lepidoptera_Bombycidae_Bombyx_mori_COI),
+#         Coleoptera_Mordellidae_COI = first(Coleoptera_Mordellidae_COI),
+#         Coleoptera_Elateridae_COI = first(Coleoptera_Elateridae_COI)
+#     )
+
+# env_data
+## make long-format dataset of the COI_spike mapped reads, one row per sample and spike_species
+## change names of the COI spike mapped reads to omit the ng portion
+env_spikes <- soupdata %>%
+    dplyr::select(sample = DateTrapEIRUN,
+                  Lepidoptera_Bombycidae_Bombyx_mori_COI = Lepidoptera_Bombycidae_Bombyx_mori_10ng_COI,
+                  Coleoptera_Mordellidae_COI = Coleoptera_Mordellidae_20ng_COI,
+                  Coleoptera_Elateridae_COI = Coleoptera_Elateridae_40ng_COI,
+                  sampleorig = sample) %>%
+    tidyr::gather(species, mapped_reads_mitogenome,
+                  Lepidoptera_Bombycidae_Bombyx_mori_COI,
+                  Coleoptera_Mordellidae_COI, Coleoptera_Elateridae_COI) %>%
+    dplyr::distinct(sample, species, mapped_reads_mitogenome, sampleorig)
+
+# extract mapped reads and pct_coverage for each mitogenome in each sample
+env_data <- soupdata %>%
+    dplyr::select(sample = DateTrapEIRUN, species = mitogenome, mapped_reads_mitogenome = mapped_reads, pct_coverage_mitogenome = pct_coverage, sampleorig = sample)
+
+# bind rows with env_spikes dataset, with different cols for mapped reads to mitogenomes and COI spike
+env_data <- bind_rows(env_data, env_spikes) %>% arrange(sample)
+
+# add fastq read counts to dataset,
+env_data <- left_join(env_data, fastq_read_counts_PlatesABA2B2EFGH, by = c("sampleorig" = "sample")) %>% dplyr::select(-sampleorig)
+
+# create a column indicating mitogenome or COI_spike species, change column order
+env_data$mito_spike <- if_else(grepl("_COI$", env_data$species), "spike", "mitogenome")
+env_data <- env_data %>% dplyr::select(sample, mito_spike, everything())
+
+# save(mitogenomes_data, env_design, env_data, file = "~/Dropbox/Working_docs/Roslin_Greenland/2018/manuscript_methods/20190109/Rcode/Rdata/arcdyn_suppfiles_soups_20190115_308mitogenomes.RData")
+# loadfile syntax
+# load("~/Dropbox/Working_docs/Roslin_Greenland/2018/manuscript_methods/20190109/Rcode/Rdata/arcdyn_suppfiles_soups_20190115_308mitogenomes.RData")
+```
+
+```{r mock data files for Otso on 20181221 using 308 mitogenomes, eval=FALSE}
+# mock datasets 
+setwd("~/Dropbox/Working_docs/Roslin_Greenland/2017/bulk_samples/PlatesABA2B2EFGH") 
+
+mockEF <- read_excel("minimap2_308mitogenomes_20190115/mocks_idx_meta_genomecov_PlatesEF_20190115_308mitogenomes.xlsx", sheet = "mocks_idx_meta_genomecov_Plates", na = "NA")
+mockEF <- hablar::convert(mockEF, num(Replicate, inputDNA_ng))
+# mockEF$Replicate <- as.character(mockEF$Replicate)
+mockGH <- read_excel("minimap2_308mitogenomes_20190115/mocks_idx_meta_genomecov_PlatesGH_20190115_308mitogenomes.xlsx", sheet = "mocks_idx_meta_genomecov_Plates", na = "NA")
+mockGH <- hablar::convert(mockGH, num(Replicate, inputDNA_ng))
+
+# old location
+# mockEF <- read_excel("PlatesEF/EF_outputs_20190115_F2308_f0x2_q48_minimap2_308mitogenomes/mocks_idx_meta_genomecov_PlatesEF_20190115_308mitogenomes.xlsx", sheet = "mocks_idx_meta_genomecov_Plates", na = "NA")
+# mockEF$Replicate <- as.character(mockEF$Replicate)
+# mockGH <- read_excel("PlatesGH/GH_outputs_20190115_F2308_f0x2_q48_minimap2_308mitogenomes/mocks_idx_meta_genomecov_PlatesGH_20190115_308mitogenomes.xlsx", sheet = "mocks_idx_meta_genomecov_Plates", na = "NA")
+
+mockall <- dplyr::bind_rows(mockEF, mockGH)
+
+# add fastq read counts to dataset,
+mockall <- left_join(mockall, fastq_read_counts_PlatesABA2B2EFGH, by = c("sample" = "sample"))
+
+## to make mock_inputspp
+### extract COI_spike columns, make a long-format dataset (with gather), change column name to mitogenome, reduce to unique COI_spike names, and add a new column with index numbers (1,2,3). Change COI_spike colnames to omit 10/20/40ng from name
+mock_spikes <- mockall %>%
+    dplyr::select(Lepidoptera_Bombycidae_Bombyx_mori_COI = Lepidoptera_Bombycidae_Bombyx_mori_10ng_COI, Coleoptera_Mordellidae_COI = Coleoptera_Mordellidae_20ng_COI, Coleoptera_Elateridae_COI = Coleoptera_Elateridae_40ng_COI) %>%
+    tidyr::gather(species, mapped_reads, Lepidoptera_Bombycidae_Bombyx_mori_COI, Coleoptera_Mordellidae_COI, Coleoptera_Elateridae_COI) %>%
+    dplyr::select(mitogenome = species) %>%
+    dplyr::distinct(mitogenome)
+
+mock_spikes <- cbind(mock_spikes, order = seq(nrow(mock_spikes)))
+
+### extract mitogenome column, reduce to unique mitogenome names, and add a new column with index numbers (1,...,308)
+mock_mitogenomes <- mockall %>%
+    dplyr::select(mitogenome, mt_length) %>%
+    dplyr::distinct(mitogenome, mt_length)
+
+mock_mitogenomes <- cbind(mock_mitogenomes, order = seq(nrow(mock_mitogenomes)))
+
+### bind mock_mitogenomes and mock_spikes, add spike or sp as prefix, merge with index number, change column order
+mock_inputspp <- dplyr::bind_rows(mock_mitogenomes, mock_spikes)
+mock_inputspp$species <- if_else(grepl("_COI$", mock_inputspp$mitogenome), "spike", "sp")
+mock_inputspp <- mock_inputspp %>%
+    unite(species, c("species", "order"), sep = "") %>%
+    dplyr::select(species, mitogenome, mt_length)
+
+
+## to make mock_design
+## sample	experiment	run	lysis	input species	input mount
+### select columns except for the COI_spike columns
+mock_design <- mockall %>%
+    dplyr::select(plate = Plate, shortname = Expt_shortname, experiment, run = Replicate, mitogenome_spike = mitogenome, input_amount = inputDNA_ng)
+### left_join mock_inputspp. Do not include lysis (not necessary), do include mitogenome name
+mock_design <- dplyr::left_join(mock_design, mock_inputspp, by = c("mitogenome_spike" = "mitogenome")) %>%
+    dplyr::select(plate, shortname, experiment, run, mitogenome_spike, input_species = species, input_amount)
+
+### select COI_spike species
+mock_spikes <- mockall %>% dplyr::select(plate = Plate, shortname = Expt_shortname, experiment, run = Replicate, Lepidoptera_Bombycidae_Bombyx_mori_COI = Lepidoptera_Bombycidae_Bombyx_mori_10ng_COI, Coleoptera_Mordellidae_COI = Coleoptera_Mordellidae_20ng_COI, Coleoptera_Elateridae_COI = Coleoptera_Elateridae_40ng_COI) %>%
+    tidyr::gather(mitogenome_spike, mapped_reads_COI, Lepidoptera_Bombycidae_Bombyx_mori_COI, Coleoptera_Mordellidae_COI, Coleoptera_Elateridae_COI) %>%
+    dplyr::distinct(plate, shortname, experiment, run, mitogenome_spike, mapped_reads_COI)
+
+### add input DNA amounts (since only PlatesEF & GH, the amts are 0.2, 0.4, 0.8 only)
+mock_spikes <- mock_spikes %>% 
+    mutate(input_amount = case_when(
+        mitogenome_spike == "Lepidoptera_Bombycidae_Bombyx_mori_COI" ~ 0.2,
+        mitogenome_spike == "Coleoptera_Mordellidae_COI" ~ 0.4,
+        mitogenome_spike == "Coleoptera_Elateridae_COI" ~ 0.8
+    )
+)
+
+mock_spikes <- left_join(mock_spikes, mock_inputspp, by = c("mitogenome_spike" = "mitogenome")) # %>% tidyr::separate(sample, c(NA, "Run"), sep = "_", remove = FALSE) #
+
+mock_design$input_amount <- as.numeric(mock_design$input_amount)
+
+mock_spikes <- mock_spikes %>% 
+    dplyr::select(plate, shortname, experiment, run, mitogenome_spike, input_species = species, input_amount)
+
+mock_design <- bind_rows(mock_design, mock_spikes) %>% 
+    arrange(plate, shortname, run) # 4976 obs
+
+mock_design <- mock_design %>% 
+    unite("sample", c(plate, shortname, run), remove = FALSE)
+
+names(mock_design)
+
+
+## to make mock_data
+## sample mitogenome_spike mapped_reads_mitogenome pct_coverage_mitogenome mapped_reads_COI
+
+### select columns except for the COI_spike columns
+mock_data <- mockall %>% 
+    dplyr::select(plate = Plate, shortname = Expt_shortname, experiment, run = Replicate, sample, mitogenome_spike = mitogenome, mapped_reads_mitogenome = mapped_reads, pct_coverage_mitogenome = pct_coverage)
+
+mock_spikes <- mockall %>% 
+    dplyr::select(plate = Plate, shortname = Expt_shortname, experiment, run = Replicate, sample, Lepidoptera_Bombycidae_Bombyx_mori_COI = Lepidoptera_Bombycidae_Bombyx_mori_10ng_COI, Coleoptera_Mordellidae_COI = Coleoptera_Mordellidae_20ng_COI, Coleoptera_Elateridae_COI = Coleoptera_Elateridae_40ng_COI, tot_num_seqs) %>%
+    tidyr::gather(mitogenome_spike, mapped_reads_mitogenome, Lepidoptera_Bombycidae_Bombyx_mori_COI, Coleoptera_Mordellidae_COI, Coleoptera_Elateridae_COI) %>%
+    dplyr::distinct(plate, shortname, experiment, run, sample, mitogenome_spike, mapped_reads_mitogenome)
+
+# names(mock_data)
+# names(mock_spikes)
+
+# bind mock_data and mock_spikes
+mock_data <- bind_rows(mock_data, mock_spikes) %>% arrange(plate, shortname, run)
+
+# add fastq read counts to dataset,
+mock_data <- left_join(mock_data, fastq_read_counts_PlatesABA2B2EFGH, by = c("sample" = "sample")) %>% dplyr::select(-sample) # remove sample column with Plate_well info
+
+mock_data <- mock_data %>% unite("sample", c(plate, shortname, run), remove = FALSE) # create new sample column using (plate, shortname, run). NB R automatically replaces old sample col with this new sample col
+names(mock_data)
+
+
+## save data files
+# save(mock_inputspp, mock_design, mock_data, file = "~/Dropbox/Working_docs/Roslin_Greenland/2018/manuscript_methods/20190109/Rcode/Rdata/arcdyn_suppfiles_mocks_20190115_308mitogenomes.RData")
+
+# loadfile syntax
+# load("~/Dropbox/Working_docs/Roslin_Greenland/2018/manuscript_methods/20190109/Rcode/Rdata/arcdyn_suppfiles_mocks_20190115_308mitogenomes.RData")
+```
+
+```{r sample data files for Otso on 20181221 using 406 COI barcodes, eval=FALSE}
+setwd("~/Dropbox/Working_docs/Roslin_Greenland/2017/bulk_samples/PlatesABA2B2EFGH") 
+getwd()
+
+# COI_barcode soups dataset
+soupdata <- read_tsv("minimap2_406barcodes_20190116/idx_meta_genomecov_ABA2B2EFGH_minimap2_20190116_406barcodes.txt.zip")
+# soupdata <- read_tsv("send_to_ArcDyn_collaborators_20180727_COI_Barcodes_only/idx_meta_genomecov_ABA2B2EFGH_minimap2_COIBarcodesOnly_20180727.txt.zip")
+
+# mitogenomes_data
+mitogenomes_data <- soupdata %>% dplyr::select(mitogenome, mt_length, Order, Family, Genus, Species_BOLD)
+
+# env_design
+## env_design, select sample, Date,
+env_design <- soupdata %>% dplyr::select(sample = DateTrapEIRUN, date = Date, trap = Trap, run = EI_RUN, lysis_buffer_orig_total_ul, lysis_buffer_purified_ul, lysis_buffer_proportion)
+
+## spike input DNA amount
+## Plates AB & A2B2:  10, 20, 40 ng;  Plates EF & GH:  0.2, 0.4, 0.8 ng, for Bombycidae, Mordellidae, Elateridae, respectively
+env_design <- env_design %>% mutate(
+    Lepidoptera_Bombycidae_Bombyx_mori_COI = case_when(
+        run == "idx_meta_genomecov_AB" ~ 10,
+        run == "idx_meta_genomecov_A2B2" ~ 10,
+        run == "idx_meta_genomecov_EF" ~ 0.2,
+        run == "idx_meta_genomecov_GH" ~ 0.2
+    )
+)
+env_design <- env_design %>% mutate(
+    Coleoptera_Mordellidae_COI = case_when(
+        run == "idx_meta_genomecov_AB" ~ 20,
+        run == "idx_meta_genomecov_A2B2" ~ 20,
+        run == "idx_meta_genomecov_EF" ~ 0.4,
+        run == "idx_meta_genomecov_GH" ~ 0.4
+    )
+)
+env_design <- env_design %>% mutate(
+    Coleoptera_Elateridae_COI = case_when(
+        run == "idx_meta_genomecov_AB" ~ 40,
+        run == "idx_meta_genomecov_A2B2" ~ 40,
+        run == "idx_meta_genomecov_EF" ~ 0.8,
+        run == "idx_meta_genomecov_GH" ~ 0.8
+    )
+)
+
+names(env_design)
+# summarise env_design
+# env_design_summarised <- env_design %>%
+#     dplyr::group_by(sample) %>%
+#     dplyr::summarise(
+#         date = first(date),
+#         trap = first(trap),
+#         run = first(run),
+#         lysis_buffer_orig_total_ul = first(lysis_buffer_orig_total_ul),
+#         lysis_buffer_purified_ul = first(lysis_buffer_purified_ul),
+#         lysis_buffer_proportion = first(lysis_buffer_proportion),
+#         Lepidoptera_Bombycidae_Bombyx_mori_COI = first(Lepidoptera_Bombycidae_Bombyx_mori_COI),
+#         Coleoptera_Mordellidae_COI = first(Coleoptera_Mordellidae_COI),
+#         Coleoptera_Elateridae_COI = first(Coleoptera_Elateridae_COI)
+#     )
+
+names(soupdata)
+# env_data
+## make long-format dataset of the COI_spike mapped reads, one row per sample and spike_species
+## change names of the COI spike mapped reads to omit the ng portion
+env_spikes <- soupdata %>% dplyr::select(sample = DateTrapEIRUN, Lepidoptera_Bombycidae_Bombyx_mori_COI = Lepidoptera_Bombycidae_Bombyx_mori_10ng_COI, Coleoptera_Mordellidae_COI = Coleoptera_Mordellidae_20ng_COI, Coleoptera_Elateridae_COI = Coleoptera_Elateridae_40ng_COI, sampleorig = sample) %>%
+    tidyr::gather(species, mapped_reads_mitogenome, Lepidoptera_Bombycidae_Bombyx_mori_COI, Coleoptera_Mordellidae_COI, Coleoptera_Elateridae_COI) %>%
+    dplyr::distinct(sample, species, mapped_reads_mitogenome, sampleorig)
+
+# extract mapped reads and pct_coverage for each mitogenome in each sample
+env_data <- soupdata %>%
+    dplyr::select(sample = DateTrapEIRUN, species = mitogenome, mapped_reads_mitogenome = mapped_reads, pct_coverage_mitogenome = pct_coverage, sampleorig = sample)
+
+# bind rows with env_spikes dataset, with different cols for mapped reads to mitogenomes and COI spike
+env_data <- bind_rows(env_data, env_spikes) %>% arrange(sample)
+
+# add fastq read counts to dataset,
+env_data <- left_join(env_data, fastq_read_counts_PlatesABA2B2EFGH, by = c("sampleorig" = "sample")) %>% dplyr::select(-sampleorig)
+
+# create a column indicating mitogenome or COI_spike species, change column order
+env_data$mito_spike <- if_else(grepl("_COI$", env_data$species), "spike", "mitogenome")
+env_data <- env_data %>% dplyr::select(sample, mito_spike, everything())
+
+names(env_data)
+
+# save(mitogenomes_data, env_design, env_data, file = "~/Dropbox/Working_docs/Roslin_Greenland/2018/manuscript_methods/20190109/Rcode/Rdata/arcdyn_suppfiles_soups_20190116_406barcodes.RData")
+
+```
+
+```{r mock data files for Otso on 20181221 using 406 COI barcodes, eval=FALSE}
+# mock datasets
+## mockall
+### read EF and GH mock datasets, select the same columns and bind_rows
+setwd("~/Dropbox/Working_docs/Roslin_Greenland/2017/bulk_samples/PlatesABA2B2EFGH")
+
+
+mockEF <- read_excel("minimap2_406barcodes_20190116/mocks_idx_meta_genomecov_PlatesEF_20190116_406barcodes.xlsx", sheet = "mocks_idx_meta_genomecov_Plates", na = "NA")
+mockEF <- hablar::convert(mockEF, num(Replicate, inputDNA_ng))
+mockGH <- read_excel("minimap2_406barcodes_20190116/mocks_idx_meta_genomecov_PlatesGH_20190116_406barcodes.xlsx", sheet = "mocks_idx_meta_genomecov_Plates", na = "NA")
+mockGH <- hablar::convert(mockGH, num(Replicate, inputDNA_ng))
+
+# mockEF <- read_excel("PlatesEF/EF_outputs_20190116_F2308_f0x2_q48_minimap2_406barcodes/mocks_idx_meta_genomecov_PlatesEF_20190116_406barcodes.xlsx", sheet = "mocks_idx_meta_genomecov_Plates", na = "NA") 
+# mockEF <- hablar::convert(mockEF, num(Replicate, inputDNA_ng))
+# mockGH <- read_excel("PlatesGH/GH_outputs_20190116_F2308_f0x2_q48_minimap2_406barcodes/mocks_idx_meta_genomecov_PlatesGH_20190116_406barcodes.xlsx", sheet = "mocks_idx_meta_genomecov_Plates", na = "NA")
+# mockGH <- hablar::convert(mockGH, num(Replicate, inputDNA_ng))
+
+mockall <- bind_rows(mockEF, mockGH)
+names(mockall)
+
+mockall <- mockall %>% dplyr::select(plate = Plate, shortname = Expt_shortname, experiment, run = Replicate, sample, mitogenome_spike = mitogenome, length = mt_length, mapped_reads_mitogenome = mapped_reads, pct_coverage_mitogenome = pct_coverage, input_amount = inputDNA_ng, Lepidoptera_Bombycidae_Bombyx_mori_COI = Lepidoptera_Bombycidae_Bombyx_mori_10ng_COI, Coleoptera_Mordellidae_COI = Coleoptera_Mordellidae_20ng_COI, Coleoptera_Elateridae_COI = Coleoptera_Elateridae_40ng_COI)
+names(mockall)
+
+## to make mock_inputspp
+### extract COI_spike columns, make a long-format dataset (with gather), change column name to mitogenome, reduce to unique COI_spike names, and add a new column with index numbers (1,2,3). Change COI_spike colnames to omit 10/20/40ng from name
+mock_spikes <- mockall %>%
+    dplyr::select(Lepidoptera_Bombycidae_Bombyx_mori_COI, Coleoptera_Mordellidae_COI, Coleoptera_Elateridae_COI) %>%
+    tidyr::gather(species, mapped_reads, Lepidoptera_Bombycidae_Bombyx_mori_COI, Coleoptera_Mordellidae_COI, Coleoptera_Elateridae_COI) %>%
+    dplyr::select(mitogenome_spike = species) %>%
+    dplyr::distinct(mitogenome_spike)
+mock_spikes <- cbind(mock_spikes, order = seq(nrow(mock_spikes)))
+
+### extract mitogenome column (which is the name of the COI barcode seqs), reduce to unique names, and add a new column with index numbers (1,...,406)
+mock_mitogenomes <- mockall %>%
+    dplyr::select(mitogenome_spike, length) %>%
+    dplyr::distinct(mitogenome_spike, length)
+mock_mitogenomes <- cbind(mock_mitogenomes, order = seq(nrow(mock_mitogenomes)))
+
+### bind mock_mitogenomes and mock_spikes, add spike or sp as prefix, merge with index number, change column order
+mock_inputspp <- dplyr::bind_rows(mock_mitogenomes, mock_spikes)
+mock_inputspp$species <- if_else(grepl("_COI$", mock_inputspp$mitogenome_spike), "spike", "sp")
+mock_inputspp <- mock_inputspp %>%
+    unite(species, c("species", "order"), sep = "") %>%
+    dplyr::select(species, mitogenome_spike, length)
+
+
+## to make mock_design
+## sample	experiment	run	lysis	input species	input mount
+### select columns except for the COI_spike columns
+mock_design <- mockall %>%
+    dplyr::select(plate, shortname, experiment, run, mitogenome_spike, input_amount)
+### left_join mock_inputspp. Do not include lysis (not necessary), do include mitogenome name
+mock_design <- dplyr::left_join(mock_design, mock_inputspp, by = c("mitogenome_spike" = "mitogenome_spike")) %>%
+    dplyr::select(plate, shortname, experiment, run, mitogenome_spike, input_species = species, input_amount)
+
+### select COI_spike species
+mock_spikes <- mockall %>% dplyr::select(plate, shortname, experiment, run, Lepidoptera_Bombycidae_Bombyx_mori_COI, Coleoptera_Mordellidae_COI, Coleoptera_Elateridae_COI) %>%
+    tidyr::gather(mitogenome_spike, mapped_reads_COI, Lepidoptera_Bombycidae_Bombyx_mori_COI, Coleoptera_Mordellidae_COI, Coleoptera_Elateridae_COI) %>%
+    dplyr::distinct(plate, shortname, experiment, run, mitogenome_spike, mapped_reads_COI)
+
+### add input DNA amounts (since only PlatesEF & GH, the amts are 0.2, 0.4, 0.8 only)
+mock_spikes <- mock_spikes %>% mutate(
+    input_amount = case_when(
+        mitogenome_spike == "Lepidoptera_Bombycidae_Bombyx_mori_COI" ~ 0.2,
+        mitogenome_spike == "Coleoptera_Mordellidae_COI" ~ 0.4,
+        mitogenome_spike == "Coleoptera_Elateridae_COI" ~ 0.8
+    )
+)
+
+mock_spikes <- left_join(mock_spikes, mock_inputspp, by = c("mitogenome_spike" = "mitogenome_spike")) # %>% tidyr::separate(sample, c(NA, "Run"), sep = "_", remove = FALSE) #
+
+mock_spikes <- mock_spikes %>% dplyr::select(plate, shortname, experiment, run, mitogenome_spike, input_species = species, input_amount)
+
+mock_design <- bind_rows(mock_design, mock_spikes) %>% arrange(plate, shortname, run) # 6544 obs
+mock_design <- mock_design %>% unite("sample", c(plate, shortname, run), remove = FALSE)
+names(mock_design)
+
+
+
+## to make mock_data
+## sample mitogenome_spike mapped_reads_mitogenome pct_coverage_mitogenome mapped_reads_COI
+
+### select columns except for the COI_spike columns
+mock_data <- mockall %>% dplyr::select(plate, shortname, experiment, run, sample, mitogenome_spike, mapped_reads_mitogenome, pct_coverage_mitogenome)
+
+mock_spikes <- mockall %>% dplyr::select(plate, shortname, experiment, run, sample,  Lepidoptera_Bombycidae_Bombyx_mori_COI, Coleoptera_Mordellidae_COI, Coleoptera_Elateridae_COI) %>%
+    tidyr::gather(mitogenome_spike, mapped_reads_mitogenome, Lepidoptera_Bombycidae_Bombyx_mori_COI, Coleoptera_Mordellidae_COI, Coleoptera_Elateridae_COI) %>%
+    dplyr::distinct(plate, shortname, experiment, run, sample, mitogenome_spike, mapped_reads_mitogenome)
+
+names(mock_data)
+names(mock_spikes)
+
+# bind rows
+mock_data <- bind_rows(mock_data, mock_spikes) %>% arrange(plate, shortname, run)
+
+# add fastq read counts to dataset,
+mock_data <- left_join(mock_data, fastq_read_counts_PlatesABA2B2EFGH, by = c("sample" = "sample")) %>% dplyr::select(-sample) # remove sample column with Plate_well info
+
+mock_data <- mock_data %>% unite("sample", c(plate, shortname, run), remove = FALSE)
+
+# create a column indicating mitogenome or COI_spike species, change column order
+mock_data$mito_spike <- if_else(grepl("_COI$", mock_data$mitogenome_spike), "spike", "mitogenome")
+mock_data <- mock_data %>% dplyr::select(sample, mito_spike, everything())
+ 
+names(mock_data)
+
+## save data files
+# save(mock_inputspp, mock_design, mock_data, file = "~/Dropbox/Working_docs/Roslin_Greenland/2018/manuscript_methods/20190109/Rcode/Rdata/arcdyn_suppfiles_mocks_20190116_406barcodes.RData")
+
+## load datafiles
+# load("~/Dropbox/Working_docs/Roslin_Greenland/2018/manuscript_methods/20190109/Rcode/Rdata/arcdyn_suppfiles_mocks_20190116_406barcodes.RData")
+ 
+```
+
+
+
+
+

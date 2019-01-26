@@ -1,0 +1,33 @@
+This stage is complex because i've merged multiple steps into a few scripts. I run these steps using the launch_minimap2_samtools_Plates*.sh scripts, one for each RUN
+
+The overall order of events is that i upload and edit the shell and bsub scripts, run minimap2 on all sample folders in all RUNs, and then run samtools on all minimap2 bam files in all sample folders in all RUNs
+
+There are four runs:  A2B2, AB, EF, GH, and there is a complication:  In RUN == PlatesEF, instead of "Sample", EI named the folders "Plate". So after uploading, I modify _loop_minimap2_only_20190115.sh so that 'find' looks for folders starting with "Plate*"
+
+Order of operations:
+
+1. The four launch_minimap2_samtools_Plates*.sh are what i use to do the below steps, one for each RUN so that i use the correct pathnames. Steps 2, 3, 4, and 5 are carried out for each RUN.
+
+2. In macOS, I scp the minimap2 and samtools shell and bsub files to the server (4 files total), in the correct RUN folder
+     _loop_minimap2_only_20190115.bsub  # bsub script to launch _loop_minimap2_only_20190115.sh
+     _loop_minimap2_only_20190115.sh # shell script to run minimap2
+     _loop_samtools_only_20190115.bsub # bsub script to launch _loop_samtools_only_20190115.sh
+     _loop_samtools_only_20190115.sh # shell script to run samtools
+
+3. Then, because there are so many samples to map, i parallelise the work within each RUN by making 10 subfolders in the sample enclosing folder (e.g. PlatesA2B2_combined/). The subfolders are named BWA01, BWA02, ..., BWA10. (BWA because that was the first software that i used).
+
+I hand-copy 1/10 of the sample folders (using drag and drop in Transmit, which is my ftp program of choice on the mac) and then I parallel cp the minimap2 and samtools shell and bsub files into each subfolder.
+
+I use sed to change the jobID text in both bsub files so that the jobs identify themselves when i run bjobs. (e.g. jobID mnmpA2B201 == minimap2 running in PlatesA2B2_combined/BWA01/). I do some checking to ensure that I've made the correct edits.
+
+4. I launch the minimap2 shell script from within each BWA subfolder within each RUN. In total, i launch 10 jobs per RUN, 40 jobs total.
+
+5. After all minimap2 jobs are done after about 12 hours (typically each job runs 1-2 hours, and there are 40 total jobs. Since I can run 7 jobs at a time on the mellanox-ib queue, that's ~6 sets of jobs at 2 hours/set = 12 hours to finish all jobs), I go back to each launch_minimap2_samtools_Plates*.sh and launch the 40 jobs total for samtools. These jobs run quickly and are done in a couple of hours.
+
+6. Finally, I run launch_postsamtools_copy_idx_genomecov_files.sh, which copies the samtools output files into a single folder per RUN and tar/gzips it to be downloaded.  NB.  This script runs a few commands to mkdir a folder for one RUN and then jumps down to run some generic code.  So there are four jumps from top to bottom to run this script.
+
+7. I can re-run the above 6 steps for a second mapping target (308mitogenomes and 406barcodes).
+
+End
+
+N.B. PlateH_D10_mapQ_histogram_example.pdf is a single example of the distribution of minimap2 mapping quality scores. We see a seriously bimodal distribution, and I semi-arbitrarily chose -q 48 as the minimum allowable mapping quality for samtools filtering

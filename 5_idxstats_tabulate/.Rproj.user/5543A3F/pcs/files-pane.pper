@@ -1,0 +1,17 @@
+{
+    "path" : "~/Dropbox/Working_docs/Roslin_Greenland/2017/bulk_samples/ArcDyn_scripts/5_idxstats_tabulate",
+    "sortOrder" : [
+        {
+            "ascending" : true,
+            "columnIndex" : 2
+        },
+        {
+            "ascending" : false,
+            "columnIndex" : 4
+        },
+        {
+            "ascending" : false,
+            "columnIndex" : 3
+        }
+    ]
+}
