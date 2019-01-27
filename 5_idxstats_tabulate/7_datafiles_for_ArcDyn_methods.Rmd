@@ -482,6 +482,16 @@ save(species, spikes, mock_design, mock_data_mitogenome, mock_data_COI,
 
 END
 
+
+
+
+
+
+
+
+Previous code.  Ignore this.
+
+
 Loading input_data_step5_20190120.RData, which is correctly formatted for downstream statistical analysis. I use these datafiles as my template for the above code. For viewing convenience, I then put these files into an Excel spreadsheet (saved to the manuscript_methods/ folder)
 ```{r load input_data_step5_20190120.RData, eval=FALSE}
 pathtoexampledata = "~/Dropbox/Working_docs/Roslin_Greenland/2018/manuscript_methods/EcoLetts_20190120/Rcode/Rdata"  
@@ -514,7 +524,7 @@ tibble(spikes)
 
 
 
-Previous code. Ignore this
+Previous code. Ignore this. 
 
 ```{r soupdata308, eval=FALSE}
 # mapping outputs 
