@@ -1,6 +1,6 @@
 # ArcDyn
 
-This version is the first draft version of the code for publication. This version of the code resulted from re-running the entire ArcDyn pipeline from the beginning (i.e. from the original sequence files received from sequencing centre).
+This version is the first draft version of the code for publication. This version of the code resulted from re-running the entire ArcDyn pipeline from the beginning (i.e. from the original sequence files received from sequencing centre). The scripts here represent Step 4 in Box 1 of the ArcDyn methods paper.
 
 - downloading and concatenating the fastq files for each sample
 
