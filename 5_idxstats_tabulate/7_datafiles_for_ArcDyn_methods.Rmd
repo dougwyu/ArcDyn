@@ -472,8 +472,8 @@ mock_seq_depth <- left_join(mock_seq_depth, fastq_read_counts_PlatesABA2B2EFGH, 
 
 Save datasets into a single RData file
 ```{r}
-setwd("~/Dropbox/Working_docs/Roslin_Greenland/2018/manuscript_methods/201901248_Ecoletts/Rcode/Rdata")
-getwd()
+# setwd("~/Dropbox/Working_docs/Roslin_Greenland/2018/manuscript_methods/201901248_Ecoletts/Rcode/Rdata")
+# getwd()
 
 save(species, spikes, mock_design, mock_data_mitogenome, mock_data_COI,
      env_design, env_data_mitogenome, env_data_COI, mock_seq_depth, env_seq_depth,
