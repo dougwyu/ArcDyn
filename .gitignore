@@ -1,3 +1,5 @@
+.DS_Store
+
 not_included_in_repo/*
 
 README.taskpaper
