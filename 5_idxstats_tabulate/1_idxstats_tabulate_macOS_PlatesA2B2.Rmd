@@ -52,15 +52,21 @@ samtoolsqual <- "q48"
 
 # use this version for minimap2 mapping to 308mitogenomes
 # outputs_PlatesA2B2_F2308_f0x2_q48_minimap2_outputs_20190115_308mitogenomes
-idxstatsgenomecovfolder <- paste0("outputs_PlatesA2B2_", samtoolsfilter, "_", samtoolsqual, "_minimap2_outputs_20190115_308mitogenomes")  # this is the enclosing folder around the idxstats and genomcov files for a given set of soups
+# idxstatsgenomecovfolder <- paste0("outputs_PlatesA2B2_", samtoolsfilter, "_", samtoolsqual, "_minimap2_outputs_20190115_308mitogenomes")  # this is the enclosing folder around the idxstats and genomcov files for a given set of soups
 # this is where i store the outputs of this script
-outputidxstatstabulatefolder <- "A2B2_outputs_20190115_F2308_f0x2_q48_minimap2_308mitogenomes"
+# outputidxstatstabulatefolder <- "A2B2_outputs_20190115_F2308_f0x2_q48_minimap2_308mitogenomes"
 
 # use this version for minimap2 mapping to 406 COI_barcodes
 # idxstatsgenomecovfolder <- paste0("outputs_PlatesA2B2_", samtoolsfilter, "_", samtoolsqual, "_minimap2_outputs_20190116_406barcodes")  # this is the enclosing folder around the idxstats and genomcov files for a given set of soups
 # outputs_PlatesA2B2_F2308_f0x2_q48_minimap2_outputs_20190116_406barcodes
 # this is where i store the outputs of this script
 # outputidxstatstabulatefolder <- "A2B2_outputs_20190116_F2308_f0x2_q48_minimap2_406barcodes"
+
+# use this version for minimap2 mapping to 349 mitogenomes&COI_CYTB sequences
+idxstatsgenomecovfolder <- paste0("outputs_PlatesA2B2_", samtoolsfilter, "_", samtoolsqual, "_minimap2_outputs_20190202_349MITOCOICYTB")  # this is the enclosing folder around the idxstats and genomcov files for a given set of soups
+# outputs_PlatesA2B2_F2308_f0x2_q48_minimap2_outputs_20190202_349MITOCOICYTB
+# this is where i store the outputs of this script
+outputidxstatstabulatefolder <- "A2B2_outputs_20190202_F2308_f0x2_q48_minimap2_349MITOCOICYTB"
 
 idxstatsfile <- paste0("*", samtoolsfilter, "_", samtoolsqual, "_sorted.bam_idxstats\\.txt")  
     # e.g. "*F2308_f0x2_q1_sorted.bam_idxstats\\.txt"
@@ -150,7 +156,7 @@ idx %>% distinct(sample) %>% count()  # number of distinct values of sample:  17
 idx %>% distinct(pathname) %>% count()  # number of distinct values of sample:  171  
 idx %>% distinct(samtools_filter) %>% count() # number of distinct values of samtools_filter: should be 1
 idx %>% distinct(samtools_filter) # should look something like:  F2308_f0x2_q48
-idx_mitogenome_table <- idx %>% group_by(well) %>% distinct(mitogenome) %>% count() %>% arrange(desc(n)); View(idx_mitogenome_table) # mitogenomes: all columns should be 311 (308 + 3);  barcodes:  all cols should be 409 (406 + 3). sorted from largest to smallest.
+idx_mitogenome_table <- idx %>% group_by(well) %>% distinct(mitogenome) %>% count() %>% arrange(desc(n)); View(idx_mitogenome_table) # mitogenomes: all columns should be 311 (308 + 3);  barcodes:  all cols should be 409 (406 + 3); 349mitoCOICYTB: all cols should be 352 (349 + 3). sorted from largest to smallest.
 length(idx$mitogenome) / idx_mitogenome_table[1,2] == idx %>% distinct(sample) %>% count()  # should evaluate to TRUE
 ```
 
@@ -227,7 +233,7 @@ idx_meta %>% distinct(Date) %>% count()  # number of distinct values of Date:  6
 idx_meta %>% distinct(Plot) %>% count()  # number of distinct values of Plot:  should be 1
 idx_meta %>% distinct(Trap) %>% count()  # number of distinct values of Trap:  should be 3 (A,B,C)
 idx_meta %>% distinct(Week) %>% count()  # number of distinct values of Week:  18
-idx_meta %>% distinct(mitogenome) %>% count()  # number of distinct values of mitogenome (incl 3 COI spikes):  311.  barcodes:  409 (406 + 3 spikes)
+idx_meta %>% distinct(mitogenome) %>% count()  # number of distinct values of mitogenome (incl 3 COI spikes):  311.  barcodes:  409 (406 + 3 spikes). 349mitoCOICYTB: all cols should be 352 (349 + 3)
 idx_meta %>% distinct(sample) %>% count()  # number of distinct values of sample:   171 
 idx_meta %>% distinct(sample)
 idx_meta %>% distinct(Sample_alias) %>% count()  # number of distinct values of Sample_alias:  should be = sample = 171
