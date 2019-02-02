@@ -547,3 +547,59 @@ mitogenomesoutputidxstatstabulatefolder <- "../../PlatesABA2B2EFGH/minimap2_308m
 
 
 END
+
+Create an SRA metadata file for samples and mocks.  The idx_meta_genomecov_\* files are from above *before* running this line:
+
+idx_meta_genomecov_A2B2 <- idx_meta_genomecov_A2B2 %>% 
+    dplyr::select(EI_RUN, DateTrap, Date, Plot, Trap, Week, mitogenome, COI_Species, mapped_reads, mt_length, sample, Full_name_of_the_sample, Year, Sample_alias, ArcDyn_Plate_name, lysis_buffer_proportion, PC = pct_coverage)
+
+```{r}
+# idx_meta_genomecov
+idx_meta_genomecov_A2B2_SRA <- idx_meta_genomecov_A2B2 %>% 
+    dplyr::select(EI_RUN, EI_sample, DateTrap, Date) %>% 
+    distinct() %>% 
+    unite("sample_name", c("EI_RUN", "EI_sample", "DateTrap"))
+
+idx_meta_genomecov_AB_SRA <- idx_meta_genomecov_AB %>% 
+    dplyr::select(EI_RUN, EI_sample = sample, DateTrap, Date) %>% 
+    distinct() %>% 
+    unite("sample_name", c("EI_RUN", "EI_sample", "DateTrap"))
+
+idx_meta_genomecov_EF_SRA <- idx_meta_genomecov_EF %>% 
+    dplyr::select(EI_RUN, EI_sample = sample, DateTrap, Date) %>% 
+    distinct() %>% 
+    unite("sample_name", c("EI_RUN", "EI_sample", "DateTrap"))
+
+idx_meta_genomecov_GH_SRA <- idx_meta_genomecov_GH %>% 
+    dplyr::select(EI_RUN, EI_sample = sample, DateTrap, Date) %>% 
+    distinct() %>% 
+    unite("sample_name", c("EI_RUN", "EI_sample", "DateTrap"))
+
+idx_meta_genome_cov_ABA2B2EFGH_SRA <- bind_rows(idx_meta_genomecov_AB_SRA, idx_meta_genomecov_A2B2_SRA, idx_meta_genomecov_EF_SRA, idx_meta_genomecov_GH_SRA)
+
+idx_meta_genome_cov_ABA2B2EFGH_SRA <- idx_meta_genome_cov_ABA2B2EFGH_SRA %>% 
+    mutate(sample_name = str_replace(sample_name, "idx_meta_genomecov", "Run")) 
+
+# mocks
+mocks_idx_meta_genomecov_EF <- mocks_idx_meta_genomecov_EF %>% 
+    dplyr::select(-mitogenome, -mapped_reads, -PC, -input_amount) %>% 
+    distinct() %>% 
+    mutate(sample = str_replace(sample, "PlateEF_", "")) %>% 
+    unite("sample_name", c("plate_well", "sample"))
+    
+mocks_idx_meta_genomecov_GH <- mocks_idx_meta_genomecov_GH %>% 
+    dplyr::select(-mitogenome, -mapped_reads, -PC, -input_amount) %>% 
+    distinct() %>% 
+    mutate(sample = str_replace(sample, "PlateEF_", "")) %>% 
+    unite("sample_name", c("plate_well", "sample"))
+
+mocks_idx_meta_genomecov_EFGH_SRA <- bind_rows(mocks_idx_meta_genomecov_EF, mocks_idx_meta_genomecov_GH) %>% dplyr::select(sample_name)
+
+mocks_idx_meta_genomecov_EFGH_SRA$Date <- NA_character_
+
+ArcDyn_samples_mocks_ABA2B2EFGH_SRA <- bind_rows(idx_meta_genome_cov_ABA2B2EFGH_SRA, mocks_idx_meta_genomecov_EFGH_SRA)
+
+
+write_tsv(ArcDyn_samples_mocks_ABA2B2EFGH_SRA, "../not_included_in_repo/SRA_metadata/ArcDyn_samples_mocks_ABA2B2EFGH_SRA.txt") 
+```
+

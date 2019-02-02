@@ -53,18 +53,18 @@ samtoolsqual <- "q48"
 
 ### use this version for minimap2 mapping
 # outputs_PlatesEF_F2308_f0x2_q48_minimap2_20180527
-# idxstatsgenomecovfolder <- paste0("outputs_PlatesEF_", samtoolsfilter, "_", samtoolsqual, "_minimap2_outputs_20190115_308mitogenomes")  # this is the enclosing folder around the idxstats and genomcov files for a given set of soups
+idxstatsgenomecovfolder <- paste0("outputs_PlatesEF_", samtoolsfilter, "_", samtoolsqual, "_minimap2_outputs_20190115_308mitogenomes")  # this is the enclosing folder around the idxstats and genomcov files for a given set of soups
 # outputs_PlatesEF_F2308_f0x2_q48_minimap2_outputs_20190115_308mitogenomes
 # this is where i store the outputs of this script. Select according 
 # mitogenomes
-# outputidxstatstabulatefolder <- "EF_outputs_20190115_F2308_f0x2_q48_minimap2_308mitogenomes"
+outputidxstatstabulatefolder <- "EF_outputs_20190115_F2308_f0x2_q48_minimap2_308mitogenomes"
 
 ### use this version for COI_barcodes mapping
-idxstatsgenomecovfolder <- paste0("outputs_PlatesEF_", samtoolsfilter, "_", samtoolsqual, "_minimap2_outputs_20190116_406barcodes")  # this is the enclosing folder around the idxstats and genomcov files for a given set of soups
+# idxstatsgenomecovfolder <- paste0("outputs_PlatesEF_", samtoolsfilter, "_", samtoolsqual, "_minimap2_outputs_20190116_406barcodes")  # this is the enclosing folder around the idxstats and genomcov files for a given set of soups
 # outputs_PlatesEF_F2308_f0x2_q48_minimap2_outputs_20190116_406barcodes
 # this is where i store the outputs of this script. Select according 
 # barcodes
-outputidxstatstabulatefolder <- "EF_outputs_20190116_F2308_f0x2_q48_minimap2_406barcodes"
+# outputidxstatstabulatefolder <- "EF_outputs_20190116_F2308_f0x2_q48_minimap2_406barcodes"
 
 idxstatsfile <- paste0("*", samtoolsfilter, "_", samtoolsqual, "_sorted.bam_idxstats\\.txt")  
     # e.g. "*F2308_f0x2_q1_sorted.bam_idxstats\\.txt"

@@ -109,7 +109,7 @@ ls ${OUTPUTFOLDER}_Plates${PLATE}/*genomecov_d.txt.gz
 ls ${OUTPUTFOLDER}_Plates${PLATE}/*genomecov_d.txt.gz | wc -l # A2B2: 342; AB: 384; EF: 384; GH: 380;
 
 # rename, tar, and gzip for download
-MAPDATE="20190116"
+MAPDATE="20190202"
 TARGET="406barcodes" # "308mitogenomes" or "406barcodes"
 du -sh ${OUTPUTFOLDER}_Plates${PLATE}/ # ~4.4 GB
 # set filename to something that i can understand after download
