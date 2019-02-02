@@ -11,7 +11,7 @@
 module purge
 module add python/anaconda/2.5/2.7 # installed by sysops
 
-cd ~/ArcDyn || exit
+cd ~/_ArcDyn || exit
 
 # s3cmd get s3://BUCKET/OBJECT LOCAL_FILE
 s3cmd get --multipart-chunk-size-mb=100 s3://amazon-glacier-douglasyu/PlatesGH_PKG-ENQ-2379-Data_Transfer-PSEQ-1600.tar PlatesGH_PKG-ENQ-2379-Data_Transfer-PSEQ-1600.tar
