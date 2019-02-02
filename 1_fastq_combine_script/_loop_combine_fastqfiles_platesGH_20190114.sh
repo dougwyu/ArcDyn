@@ -11,7 +11,7 @@ set -o pipefail
 # Usage:
 # Interactive procedure:  run these commands before running _loop_combine_fastqfiles_platesGH_20190114.sh interactively
 # interactive
-# cd into folder holding the fastq files (e.g. ~/ArcDyn/PlatesGH/)
+# cd into folder holding the fastq files (e.g. ~/_ArcDyn/PlatesGH/)
 # upload _loop_combine_fastqfiles_platesGH_20190114.sh into the folder
 # bash _loop_combine_fastqfiles_platesGH_20190114.sh
 
@@ -21,7 +21,7 @@ set -o pipefail
 
 # PLAN:
   # make list of sample names (the folders for each set of fastq files, corresponding to a single sample/well)
-     # ~/ArcDyn/PlatesGH/
+     # ~/_ArcDyn/PlatesGH/
   # create the Sample_combined folder to hold the new fastq files
   # combine fastq files to the new Sample_combined folder
   # remove the original sample files

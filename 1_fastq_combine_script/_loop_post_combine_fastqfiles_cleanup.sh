@@ -9,7 +9,7 @@ set -o pipefail
 #######################################################################################
 
 # remove folders containing non-combined fastq files in PlatesA2B2/
-cd ~/ArcDyn/
+cd ~/_ArcDyn/
 ls
 # rm -rf PlatesA2B2/PKG-ENQ-1643-Data_Transfer-PSEQ-1600_2_lanes
 # rm -rf PlatesA2B2/PKG-ENQ-1643-Data_Transfer-PSEQ-1618_8_lanes
@@ -17,7 +17,7 @@ ls
 
 
 # remove folders containing non-combined fastq files in PlatesAB/
-cd ~/ArcDyn/
+cd ~/_ArcDyn/
 ls
 # rm -rf PlatesAB/Earlham_soups/86ec5e5c-3f7a-49f7-b485-c47afbe526dc/
 # rm -rf PlatesAB/Earlham_soups/99cf3d32-58f4-4064-a4ef-44128375cba0/
@@ -25,7 +25,7 @@ ls
 # rm -rf PlatesAB/Earlham_soups
 
 # remove folders containing non-combined fastq files in PlatesEF/
-cd ~/ArcDyn/
+cd ~/_ArcDyn/
 ls
 # rm -rf PlatesEF/Earlham_soups_20170603/170421_D00534_0170_ACAU8NANXX_PSEQ_1408/
 # rm -rf PlatesEF/Earlham_soups_20170603/170503_D00534_0171_ACAUJ2ANXX_PSEQ_1429/
@@ -34,7 +34,7 @@ ls
 # rm -rf PlatesEF/Earlham_soups_20170603
 
 # remove folders containing non-combined fastq files in PlatesGH/
-cd ~/ArcDyn/
+cd ~/_ArcDyn/
 ls
 # rm -rf PlatesGH/PKG-ENQ-2379-Data_Transfer-PSEQ-1586-trimmed/
 # rm -rf PlatesGH/PKG-ENQ-2379-Data_Transfer-PSEQ-1600/

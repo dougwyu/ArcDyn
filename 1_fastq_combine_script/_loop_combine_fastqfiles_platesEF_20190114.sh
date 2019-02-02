@@ -14,7 +14,7 @@ set -o pipefail
 # Usage:
 # Interactive procedure:  run these commands before running _loop_combine_fastqfiles_platesEF_20190114.sh interactively
 # interactive
-# cd into folder holding the fastq files downloaded from Earlham Institute (~/ArcDyn/PlatesEF/)
+# cd into folder holding the fastq files downloaded from Earlham Institute (~/_ArcDyn/PlatesEF/)
 # upload _loop_combine_fastqfiles_platesEF_20190114.sh into the folder
 # bash _loop_combine_fastqfiles_platesEF_20190114.sh
 
@@ -44,7 +44,7 @@ set -o pipefail
   # combine fastq files to the new Sample folder
   # next SAMPLE
 
-  # upload _loop_combine_fastqfiles_platesEF_20190114.sh to folder ~/ArcDyn/PlatesEF/
+  # upload _loop_combine_fastqfiles_platesEF_20190114.sh to folder ~/_ArcDyn/PlatesEF/
 
 # set variables
 PIPESTART=$(date)

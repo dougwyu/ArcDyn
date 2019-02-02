@@ -12,14 +12,14 @@ set -o pipefail
 # Usage:
 # Interactive procedure:  run these commands before running _loop_combine_fastqfiles_20180202.sh interactively
 # interactive
-# cd into folder holding the fastq files downloaded from Earlham Institute (~/ArcDyn/PlatesA2B2/)
+# cd into folder holding the fastq files downloaded from Earlham Institute (~/_ArcDyn/PlatesA2B2/)
 # upload _loop_combine_fastqfiles_platesA2B2Lane1_11_20190113.sh into the folder
 # bash _loop_combine_fastqfiles_platesA2B2Lane1_11_20190113.sh
 
 
 # PLAN:
   # make list of sample names (the folders for each set of fastq files, corresponding to a single sample/well)
-     # for example:  ~/ArcDyn/PlatesA2B2/
+     # for example:  ~/_ArcDyn/PlatesA2B2/
   # create the Sample_combined folder to hold the new fastq files
   # combine fastq files to the new Sample_combined folder
   # remove the original sample files
