@@ -109,7 +109,7 @@ parallel cp BWA*/${OUTPUTFOLDER}/*_{1}_q{2}_sorted_genomecov_d.txt.gz ${OUTPUTFO
 parallel ls ${OUTPUTFOLDER}_Plates${PLATE}/*_{1}_q{2}_sorted_genomecov_d.txt.gz ::: ${FILTER1} ${FILTER2} ::: ${QUAL1} ${QUAL2} | wc -l # A2B2: 342; AB: 384; EF: 384; GH: 380;
 
 # rename, tar, and gzip for download
-MAPDATE="20190202"
+MAPDATE="20190204"
 TARGET="349MITOCOICYTB" # "308mitogenomes", "406barcodes", "349MTCOICYTB"
 du -sh ${OUTPUTFOLDER}_Plates${PLATE}/ # ~4.5-5.0 GB
 # set filename to something that i can understand after download
