@@ -17,3 +17,4 @@ module add python/anaconda/4.2/3.5  # multiqc is now in the path
 bash _parallel_fastQC_EF_20190114.sh # this runs fastQC
 # multiqc --version # gives version number, which is 1.4
 multiqc .  # this analyses the current directory and all subdirectories.
+# this job runs about 1 hr 45 mins

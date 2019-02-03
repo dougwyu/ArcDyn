@@ -26,7 +26,7 @@ cd ~/_ArcDyn/PlatesA2B2/PlatesA2B2_combined/; ls
 
 ############## by hand, copy 1/10 the sample folders into each BWA folder
 # mkdir BWA{01,02,03,04,05,06,07,08,09,10}; ls # BWA is prefix because this was the original mapping software
-# there are 171 sample folders:  hand move 17 into each BWA folder (easier than writing a script)
+# if there are 171 sample folders:  hand move 17 into each BWA folder (easier than writing a script)
 
 ############# copy the minimap and samtools shell and bsub scripts into each BWA folder and edit the jobIDs
 MINIMAP2_BSUB="_loop_minimap2_only_20190115.bsub"; echo ${MINIMAP2_BSUB}

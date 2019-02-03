@@ -8,9 +8,9 @@ set -o pipefail
 #######################################################################################
 #######################################################################################
 # 6223.00 GB at start
-# du -sh ~/ArcDyn # 2.4T afterwards
+# du -sh ~/_ArcDyn # 2.4T afterwards
 # remove non-trimmed fastq.gz files in PlatesA2B2/PlatesA2B2_combined/
-cd ~/ArcDyn/PlatesA2B2/
+cd ~/_ArcDyn/PlatesA2B2/
 ls PlatesA2B2_combined/Sample*/Sample*fastq.gz  # should list only fastq.gz files
 ls PlatesA2B2_combined/Sample*/Sample*fq.gz # should list lots of fq.gz files
 ls PlatesA2B2_combined/Sample*/Sample*fastq.gz | wc -l  # count of fastq.gz files
@@ -21,7 +21,7 @@ ls PlatesA2B2_combined/Sample*/Sample*fq.gz # should list lots of fq.gz files
 ls PlatesA2B2_combined/Sample*/Sample*fq.gz | wc -l # should have same count value
 
 # remove non-trimmed fastq.gz files in PlatesAB/PlatesAB_combined/
-cd ~/ArcDyn/PlatesAB/
+cd ~/_ArcDyn/PlatesAB/
 ls PlatesAB_combined/Sample*/Sample*fastq.gz  # should list only fastq.gz files
 ls PlatesAB_combined/Sample*/Sample*fq.gz # should list lots of fq.gz files
 ls PlatesAB_combined/Sample*/Sample*fastq.gz | wc -l  # count of fastq.gz files
@@ -32,7 +32,7 @@ ls PlatesAB_combined/Sample*/Sample*fq.gz # should list lots of fq.gz files
 ls PlatesAB_combined/Sample*/Sample*fq.gz | wc -l  # should have same count value
 
 # remove non-trimmed fastq.gz files in PlatesEF/PlatesEF_combined/
-cd ~/ArcDyn/PlatesEF/
+cd ~/_ArcDyn/PlatesEF/
 ls PlatesEF_combined/Plate*/Plate*fastq.gz  # should list only fastq.gz files
 ls PlatesEF_combined/Plate*/Plate*fq.gz # should list lots of fq.gz files
 ls PlatesEF_combined/Plate*/Plate*fastq.gz | wc -l  # count of fastq.gz files
@@ -43,7 +43,8 @@ ls PlatesEF_combined/Plate*/Plate*fq.gz # should list lots of fq.gz files
 ls PlatesEF_combined/Plate*/Plate*fq.gz | wc -l  # should have same count value
 
 # remove non-trimmed fastq.gz files in PlatesGH/PlatesGH_combined/
-cd ~/ArcDyn/PlatesGH/
+cd ~/_ArcDyn/PlatesGH/
+du -sh PlatesGH_combined/
 ls PlatesGH_combined/Sample*/Sample*fastq.gz  # should list only fastq.gz files
 ls PlatesGH_combined/Sample*/Sample*fq.gz # should list lots of fq.gz files
 ls -1 PlatesGH_combined/Sample*/Sample*fastq.gz | wc -l  # count of fastq.gz files
@@ -52,3 +53,4 @@ ls -1 PlatesGH_combined/Sample*/Sample*fq.gz | wc -l # should have same count va
 ls PlatesGH_combined/Sample*/Sample*fastq.gz  # should list nothing
 ls PlatesGH_combined/Sample*/Sample*fq.gz # should list lots of fq.gz files
 ls -1 PlatesGH_combined/Sample*/Sample*fq.gz | wc -l # should have same count value
+du -sh PlatesGH_combined/

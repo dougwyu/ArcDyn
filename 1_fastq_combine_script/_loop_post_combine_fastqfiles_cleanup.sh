@@ -34,8 +34,8 @@ ls
 # rm -rf PlatesEF/Earlham_soups_20170603
 
 # remove folders containing non-combined fastq files in PlatesGH/
-cd ~/_ArcDyn/
-ls
-rm -rf PlatesGH/PKG-ENQ-2379-Data_Transfer-PSEQ-1586-trimmed/
-rm -rf PlatesGH/PKG-ENQ-2379-Data_Transfer-PSEQ-1600/
-rm -rf PlatesGH/PKG-ENQ-2379-Data_Transfer-PSEQ-1603/
+cd ~/_ArcDyn
+ls PlatesGH/
+# rm -rf PlatesGH/PKG-ENQ-2379-Data_Transfer-PSEQ-1586-trimmed/
+# rm -rf PlatesGH/PKG-ENQ-2379-Data_Transfer-PSEQ-1600/
+# rm -rf PlatesGH/PKG-ENQ-2379-Data_Transfer-PSEQ-1603/

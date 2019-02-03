@@ -49,7 +49,9 @@ HOMEFOLDER=$(pwd)
 echo "Home folder is ${HOMEFOLDER}"
 
 # read in folder list and make a bash array
-find * -maxdepth 1 -type d -name "Sample_*" > QCfolderlist.txt  # find all folders starting with "Sample*"
+find * -maxdepth 2 -type d -name "Sample_*" > QCfolderlist.txt  # find all folders starting with "Sample*"
+# find * -maxdepth 2 -type d -name "Sample_*" > QCfolderlist.txt  # find all folders starting with "Sample*"
+# -maxdepth 2 allows searching in BWA*/ folders if the sample folders have already been subdivided
      # head QCfolderlist.txt
      # tail QCfolderlist.txt
      # wc -l QCfolderlist.txt
@@ -60,8 +62,8 @@ echo "There are" ${#sample_names[@]} "folders that will be processed." # echo nu
 
 # this is the parallel version, successfully tested on 20180203 in platesGH/platesGH_combined/
 cd "${HOMEFOLDER}" || exit
-parallel --progress "echo Now on species {1} of ${#sample_names[@]}; fastqc {1}/*.fastq.gz" ::: "${sample_names[@]}"
-# if running on trimmed versions, the filenames end in fq.gz
+parallel --progress "echo Now on species {1} of ${#sample_names[@]}; fastqc {1}/*.fq.gz" ::: "${sample_names[@]}"
+# running on trimmed versions, so the filenames end in fq.gz
 
 
 # this is the loop version, tested and working
@@ -76,5 +78,5 @@ parallel --progress "echo Now on species {1} of ${#sample_names[@]}; fastqc {1}/
 #
 # 	cd ${FOLDER}
 #
-# 	fastqc *.fastq.gz
+# 	fastqc *.fq.gz
 # done
