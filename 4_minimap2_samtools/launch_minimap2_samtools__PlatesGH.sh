@@ -43,8 +43,8 @@ ls BWA{01,02,03,04,05,06,07,08,09,10} #| tail -n 2
 
 #### only run this if i think that i'm not downloading the latest minimap2/bwa files
 # # remove previous bwa_output and minimap2_output files
-# parallel "rm -rf BWA{}/bwa_outputs/" ::: 01 02 03 04 05 06 07 08 09 10
 # parallel "rm -rf BWA{}/minimap2_outputs/" ::: 01 02 03 04 05 06 07 08 09 10
+# parallel "rm -rf BWA{}/bwa_outputs/" ::: 01 02 03 04 05 06 07 08 09 10
 
 # edit the bsub files so that the correct jobID will show up (i suppose i could have instead run a job array...)
 cd ~/_ArcDyn/PlatesGH/PlatesGH_combined/

@@ -61,8 +61,8 @@ set -o pipefail
 
 PIPESTART=$(date)
 
-# upload _parallel_trimgalore_20190114.sh *into* folder that contains the sample folders that i want to map
-HOMEFOLDER=$(pwd) # this sets working directory to a given BWA folder
+# upload _parallel_trimgalore_20190114.sh *into* Plates* folder (equal level as Plates*_combined). e.g. put in PlatesGH/
+HOMEFOLDER=$(pwd) # this sets working directory to a Plates* folder (e.g. PlatesGH/)
 echo "Home folder is ${HOMEFOLDER}"
 
 COMBINEDFASTQ=$(basename ${HOMEFOLDER})
@@ -74,7 +74,7 @@ find ${COMBINEDFASTQ}_combined/ -maxdepth 1 -type d -name "Sample_*" > folderlis
      # wc -l folderlist.txt
 sample_info=folderlist.txt # put folderlist.txt into variable
 sample_names=($(cut -f 1 "$sample_info" | uniq)) # convert variable to array this way
-# echo "${sample_names[@]}" # echo all array elements
+# echo "${sample_names[@]}" # echo all array elements.  e.g. PlatesGH_combined/Sample_PRO1747_PlateH_B12
 echo "There are" ${#sample_names[@]} "folders that will be processed." # echo number of elements in the array
 
 

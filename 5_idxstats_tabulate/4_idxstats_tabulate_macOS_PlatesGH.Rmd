@@ -50,19 +50,24 @@ getwd()
 samtoolsfilter <- "F2308_f0x2"
 samtoolsqual <- "q48"
 
-# use this version for minimap2
+# use this version for 308 mitogenomes
 # outputs_PlatesGH_F2308_f0x2_q48_minimap2_outputs_20190115_308mitogenomes
 # idxstatsgenomecovfolder <- paste0("outputs_PlatesGH_", samtoolsfilter, "_", samtoolsqual, "_minimap2_outputs_20190115_308mitogenomes")  # this is the enclosing folder around the idxstats and genomcov files for a given set of soups
 # this is where i store the outputs of this script
-# mitogenomes
 # outputidxstatstabulatefolder <- "GH_outputs_20190115_F2308_f0x2_q48_minimap2_308mitogenomes"
 
-# use this version for COI_barcodes mapping
+# use this version for 406 COI_barcodes
 idxstatsgenomecovfolder <- paste0("outputs_PlatesGH_", samtoolsfilter, "_", samtoolsqual, "_minimap2_outputs_20190116_406barcodes")  # this is the enclosing folder around the idxstats and genomcov files for a given set of soups
 # outputs_PlatesGH_F2308_f0x2_q48_minimap2_outputs_20190116_406barcodes
 # this is where i store the outputs of this script
 # barcodes
 outputidxstatstabulatefolder <- "GH_outputs_20190116_F2308_f0x2_q48_minimap2_406barcodes"
+
+# use this version for 349 mitogenomes&COI_CYTB sequences
+idxstatsgenomecovfolder <- paste0("outputs_PlatesGH_", samtoolsfilter, "_", samtoolsqual, "_minimap2_outputs_20190202_349MITOCOICYTB")  # this is the enclosing folder around the idxstats and genomcov files for a given set of soups
+# outputs_PlatesGH_F2308_f0x2_q48_minimap2_outputs_20190202_349MITOCOICYTB
+# this is where i store the outputs of this script
+outputidxstatstabulatefolder <- "GH_outputs_20190202_F2308_f0x2_q48_minimap2_349MITOCOICYTB"
 
 idxstatsfile <- paste0("*", samtoolsfilter, "_", samtoolsqual, "_sorted.bam_idxstats\\.txt")  
     # e.g. "*F2308_f0x2_q1_sorted.bam_idxstats\\.txt"
@@ -354,10 +359,12 @@ genomecoverages_summ <- do.call(rbind, genomecoverages_summ)
     # genomecoverages_summ <- readRDS(file.path(outputidxstatstabulatefolder, "genomecoverages_summ_PlatesGH_minimap2_20190115_308mitogenomes.RDS"))
     # barcodes
      # genomecoverages_summ <- readRDS(file.path(outputidxstatstabulatefolder, "genomecoverages_summ_PlatesGH_minimap2_20190116_406barcodes.RDS"))
+    # genomecoverages_summ <- readRDS(file.path(outputidxstatstabulatefolder, "genomecoverages_summ_PlatesGH_20190202_349MITOCOICYTB.RDS"), compress = TRUE)
 
     # the commands used to save the genomecov files
     # saveRDS(file.path(genomecoverages_summ, file.path(outputidxstatstabulatefolder, "genomecoverages_summ_PlatesGH_minimap2_20190115_308mitogenomes.RDS"), compress = TRUE)
    # saveRDS(file.path(genomecoverages_summ, file.path(outputidxstatstabulatefolder, "genomecoverages_summ_PlatesGH_minimap2_20190116_406barcodes.RDS"), compress = TRUE)
+    # saveRDS(genomecoverages_summ, file.path(outputidxstatstabulatefolder, "genomecoverages_summ_PlatesGH_20190202_349MITOCOICYTB.RDS"), compress = TRUE)
 
 # left_join genomecoverages_summ to idx_meta
 idx_meta_genomecov <- left_join(idx_meta, genomecoverages_summ) # R message:  Joining, by = c("mitogenome", "sample", "well", "samtools_filter")

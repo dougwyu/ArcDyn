@@ -29,7 +29,7 @@ set -o pipefail
 # set variables
 PIPESTART=$(date)
 HOMEFOLDER=$(pwd)
-echo "Home folder is ${HOMEFOLDER}"  # Home folder is /gpfs/home/b042/greenland_2017/platesA2B2
+echo "Home folder is ${HOMEFOLDER}"  # Home folder is /gpfs/home/b042/_ArcDyn/PlatesGH/
 COMBINEDFASTQ=$(basename ${HOMEFOLDER})
 echo "COMBINEDFASTQ folder will be ${COMBINEDFASTQ}_combined/"
 INDEX=1

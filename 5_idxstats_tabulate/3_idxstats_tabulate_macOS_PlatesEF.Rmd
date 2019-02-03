@@ -51,20 +51,25 @@ getwd()
 samtoolsfilter <- "F2308_f0x2" # f0x2 is for PROPER PAIR, there are also samtools outputs for F2308 only
 samtoolsqual <- "q48"
 
-### use this version for minimap2 mapping
+### use this version for 308 mitogenomes
 # outputs_PlatesEF_F2308_f0x2_q48_minimap2_20180527
-idxstatsgenomecovfolder <- paste0("outputs_PlatesEF_", samtoolsfilter, "_", samtoolsqual, "_minimap2_outputs_20190115_308mitogenomes")  # this is the enclosing folder around the idxstats and genomcov files for a given set of soups
+# idxstatsgenomecovfolder <- paste0("outputs_PlatesEF_", samtoolsfilter, "_", samtoolsqual, "_minimap2_outputs_20190115_308mitogenomes")  # this is the enclosing folder around the idxstats and genomcov files for a given set of soups
 # outputs_PlatesEF_F2308_f0x2_q48_minimap2_outputs_20190115_308mitogenomes
 # this is where i store the outputs of this script. Select according 
-# mitogenomes
-outputidxstatstabulatefolder <- "EF_outputs_20190115_F2308_f0x2_q48_minimap2_308mitogenomes"
+# outputidxstatstabulatefolder <- "EF_outputs_20190115_F2308_f0x2_q48_minimap2_308mitogenomes"
 
-### use this version for COI_barcodes mapping
+### use this version for 406 COI_barcodes
 # idxstatsgenomecovfolder <- paste0("outputs_PlatesEF_", samtoolsfilter, "_", samtoolsqual, "_minimap2_outputs_20190116_406barcodes")  # this is the enclosing folder around the idxstats and genomcov files for a given set of soups
 # outputs_PlatesEF_F2308_f0x2_q48_minimap2_outputs_20190116_406barcodes
 # this is where i store the outputs of this script. Select according 
 # barcodes
 # outputidxstatstabulatefolder <- "EF_outputs_20190116_F2308_f0x2_q48_minimap2_406barcodes"
+
+# use this version for 349 mitogenomes&COI_CYTB sequences
+idxstatsgenomecovfolder <- paste0("outputs_PlatesEF_", samtoolsfilter, "_", samtoolsqual, "_minimap2_outputs_20190202_349MITOCOICYTB")  # this is the enclosing folder around the idxstats and genomcov files for a given set of soups
+# outputs_PlatesEF_F2308_f0x2_q48_minimap2_outputs_20190202_349MITOCOICYTB
+# this is where i store the outputs of this script
+outputidxstatstabulatefolder <- "EF_outputs_20190202_F2308_f0x2_q48_minimap2_349MITOCOICYTB"
 
 idxstatsfile <- paste0("*", samtoolsfilter, "_", samtoolsqual, "_sorted.bam_idxstats\\.txt")  
     # e.g. "*F2308_f0x2_q1_sorted.bam_idxstats\\.txt"
@@ -152,7 +157,7 @@ idx %>% distinct(sample) %>% count()  # number of distinct values of sample:  19
 idx %>% distinct(pathname) %>% count()  # number of distinct values of sample:  192
 idx %>% distinct(samtools_filter) %>% count() # number of distinct values of samtools_filter: should be 1
 idx %>% distinct(samtools_filter) # should look something like:  F2308_f0x2_q1
-idx_mitogenome_table <- idx %>% group_by(well) %>% distinct(mitogenome) %>% count() %>% arrange(desc(n)); View(idx_mitogenome_table) # should be 311 in all rows (308 mitogenomes + 3 COIspikes) or 409 (406 barcodes + 3 COI spikes)
+idx_mitogenome_table <- idx %>% group_by(well) %>% distinct(mitogenome) %>% count() %>% arrange(desc(n)); View(idx_mitogenome_table) # should be 311 in all rows (308 mitogenomes + 3 COIspikes); 409 (406 barcodes + 3 COI spikes); 349mitoCOICYTB: all cols should be 352 (349 + 3)
 length(idx$mitogenome) / idx_mitogenome_table[1,2] == idx %>% distinct(sample) %>% count()  # should evaluate to TRUE
 # e.g. 59712 rows / 311 mitogenomes == 192 samples;  78528 rows / 409 barcodes == 192
 ```
@@ -237,7 +242,7 @@ idx_meta %>% distinct(Date) %>% count()  # number of distinct values of Date:  7
 idx_meta %>% distinct(Plot) %>% count()  # number of distinct values of Plot:  2 because we also have the mocks
 idx_meta %>% distinct(Trap) %>% count()  # number of distinct values of Trap:  should be 3 (A,B,C) but we also have the mocks
 idx_meta %>% distinct(Week) %>% count()  # number of distinct values of Week:  16
-idx_meta %>% distinct(mitogenome) %>% count()  # number of distinct values of mitogenome:  311 (308 mitogenomes + 3 COI_spike);  barcodes:  409 (406 + 3 COI spikes)
+idx_meta %>% distinct(mitogenome) %>% count()  # number of distinct values of mitogenome:  311 (308 mitogenomes + 3 COI_spike);  barcodes:  409 (406 + 3 COI spikes); 349mitoCOICYTB:  352 (349 + 3)
 idx_meta %>% distinct(sample) %>% count()  # number of distinct values of sample:   192
 idx_meta %>% distinct(sample)
 idx_meta %>% distinct(Sample_alias) %>% count()  # number of distinct values of Sample_alias:  should be = sample = 192
@@ -326,11 +331,13 @@ genomecoverages_summ <- do.call(rbind, genomecoverages_summ)
     # mitogenomes
     # genomecoverages_summ <- readRDS(file.path(outputidxstatstabulatefolder, "genomecoverages_summ_PlatesEF_20190115_308mitogenomes.RDS"))
     # barcodes
-     # genomecoverages_summ <- readRDS(file.path(outputidxstatstabulatefolder, "genomecoverages_summ_PlatesEF_20190116_406barcodes.RDS"))
+    # genomecoverages_summ <- readRDS(file.path(outputidxstatstabulatefolder, "genomecoverages_summ_PlatesEF_20190116_406barcodes.RDS"))
+    # genomecoverages_summ <- readRDS(file.path(outputidxstatstabulatefolder, "genomecoverages_summ_PlatesEF_20190202_349MITOCOICYTB.RDS"), compress = TRUE)
 
     # the commands used to save the genomecov files
     # saveRDS(file.path(genomecoverages_summ, file.path(outputidxstatstabulatefolder, "genomecoverages_summ_PlatesEF_20190115_308mitogenomes.RDS"), compress = TRUE)
    # saveRDS(file.path(genomecoverages_summ, file.path(outputidxstatstabulatefolder, "genomecoverages_summ_PlatesEF_20190116_406barcodes.RDS"), compress = TRUE)
+    # saveRDS(genomecoverages_summ, file.path(outputidxstatstabulatefolder, "genomecoverages_summ_PlatesEF_20190202_349MITOCOICYTB.RDS"), compress = TRUE)
 
 # left_join genomecoverages_summ to idx_meta
 idx_meta_genomecov <- left_join(idx_meta, genomecoverages_summ) # R message:  Joining, by = c("mitogenome", "sample", "well", "samtools_filter")
@@ -402,7 +409,7 @@ samples_to_remove <- sample_names %>%
 samples_to_remove # 1 sample to remove
 # [1] "2009Jun17_Art3_TrapB_Wk25"
 idx_meta_genomecov <- idx_meta_genomecov %>% 
-    filter(!Full_name_of_the_sample %in% samples_to_remove) # 59401 obs mitogenomes, 65849 obs barcodes
+    filter(!Full_name_of_the_sample %in% samples_to_remove) # 59401 obs mitogenomes, 65849 obs barcodes, 67232 obs MITOCOICYTB
 
 # sanity check:  191 samples, which is correct since i removed 1 sample
 idx_meta_genomecov %>% 
@@ -449,7 +456,7 @@ idxstats_by_DateTrap <- idx_meta_genomecov %>%
     dplyr::count() %>% 
     dplyr::arrange(desc(n)); View(idxstats_by_DateTrap)
 
-# ideally, there should be a 311 or 409 in all rows of column "n"
+# ideally, there should be a 311, 409, or 352 in all rows of column "n"
 idxstats_by_mitogenome <- idx_meta_genomecov %>% 
     dplyr::group_by(Full_name_of_the_sample) %>% 
     dplyr::distinct(mitogenome) %>% 
@@ -459,10 +466,12 @@ idxstats_by_mitogenome <- idx_meta_genomecov %>%
 # save idx_meta_genomecov files
 # write_tsv(idx_meta_genomecov, file.path(outputidxstatstabulatefolder, "idx_meta_genomecov_PlatesEF_20190115_308mitogenomes.txt")) # output file for merging with the other RUN outputs
 # write_tsv(idx_meta_genomecov, file.path(outputidxstatstabulatefolder, "idx_meta_genomecov_PlatesEF_20190116_406barcodes.txt")) # output file for merging with the other RUN outputs
+# write_tsv(idx_meta_genomecov, file.path(outputidxstatstabulatefolder, "idx_meta_genomecov_PlatesEF_20190202_349MITOCOICYTB.txt")) # output file for merging with the other RUN outputs
 
 # in case i want to read in the output datafiles
 # idx_meta_genomecov <- read_delim(file.path(outputidxstatstabulatefolder, "idx_meta_genomecov_PlatesEF_20190115_308mitogenomes.txt"), delim = "\t", escape_double = FALSE, trim_ws = TRUE)
 # idx_meta_genomecov <- read_delim(file.path(outputidxstatstabulatefolder, "idx_meta_genomecov_PlatesEF_20190116_406barcodes.txt"), delim = "\t", escape_double = FALSE, trim_ws = TRUE)
+# idx_meta_genomecov <- read_delim(file.path(outputidxstatstabulatefolder, "idx_meta_genomecov_PlatesEF_20190202_349MITOCOICYTB.txt"), delim = "\t", escape_double = FALSE, trim_ws = TRUE)
 ```
 
 
@@ -508,16 +517,16 @@ names(mocks_idx_meta_genomecov)
 
 
 
-
 # save mocks_idx_meta_genomecov files
-
 
 # write_tsv(mocks_idx_meta_genomecov, file.path(outputidxstatstabulatefolder, "mocks_idx_meta_genomecov_PlatesEF_20190115_308mitogenomes.txt")) # for merger with mock file from PlatesGH
 # write_tsv(mocks_idx_meta_genomecov, file.path(outputidxstatstabulatefolder, "mocks_idx_meta_genomecov_PlatesEF_20190116_406barcodes.txt")) # for merger with mock file from PlatesGH
+# write_tsv(mocks_idx_meta_genomecov, file.path(outputidxstatstabulatefolder, "mocks_idx_meta_genomecov_PlatesEF_20190202_349MITOCOICYTB.txt")) # for merger with mock file from PlatesGH
 
 # read mocks_idx_meta_genomecov files
 # mocks_idx_meta_genomecov <- read_delim(file.path(outputidxstatstabulatefolder, "mocks_idx_meta_genomecov_PlatesEF_20190115_308mitogenomes.txt"), delim = "\t", escape_double = FALSE, trim_ws = TRUE)
 # mocks_idx_meta_genomecov <- read_delim(file.path(outputidxstatstabulatefolder, "mocks_idx_meta_genomecov_PlatesEF_20190116_406barcodes.txt"), delim = "\t", escape_double = FALSE, trim_ws = TRUE)
+# mocks_idx_meta_genomecov <- read_delim(file.path(outputidxstatstabulatefolder, "mocks_idx_meta_genomecov_PlatesEF_20190202_349MITOCOICYTB.txt"), delim = "\t", escape_double = FALSE, trim_ws = TRUE)
 ```
 
 

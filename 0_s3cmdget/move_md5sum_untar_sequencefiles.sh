@@ -73,6 +73,7 @@ cat PlatesA2B2.md5 # it matches, so i can untar and start working on it
 # 2017-06-03 18:06 450506629120   6f73bd9257bb54695a7c72c575b3a599  s3://amazon-glacier-douglasyu/Earlham_soups_20170603.tar
 
 cd ~/_ArcDyn/
+
 # mv PlatesEF sequence files to PlatesEF/, run in another window
 mv Earlham_soups_20170603.tar PlatesEF/
 ls
@@ -102,11 +103,24 @@ ls
 cd PlatesGH/; ls
 # compare with above values, takes a long time, run in separate window
 nohup md5sum PlatesGH_PKG-ENQ-2379-Data_Transfer-PSEQ-1586-trimmed.tar PlatesGH_PKG-ENQ-2379-Data_Transfer-PSEQ-1600.tar PlatesGH_PKG-ENQ-2379-Data_Transfer-PSEQ-1603.tar > PlatesGH.md5 &
-# takes a long time, run in separate windows
+
+# takes a long time, run in separate windows under interactive jobs
+cd ~/_ArcDyn/PlatesGH/
 nohup tar -xvf PlatesGH_PKG-ENQ-2379-Data_Transfer-PSEQ-1586-trimmed.tar &
+
+cd ~/_ArcDyn/PlatesGH/
 nohup tar -xvf PlatesGH_PKG-ENQ-2379-Data_Transfer-PSEQ-1600.tar &
+
+cd ~/_ArcDyn/PlatesGH/
 nohup tar -xvf PlatesGH_PKG-ENQ-2379-Data_Transfer-PSEQ-1603.tar &
 
+# check progress of jobs.  should result in 96 or 192 files
+cd ~/_ArcDyn/PlatesGH/
+ls PKG-ENQ-2379-Data_Transfer-PSEQ-1586-trimmed/ | wc -l # 97 == 96 Sample folders, 29 GB
+ls PKG-ENQ-2379-Data_Transfer-PSEQ-1600/ | wc -l # 193 == 192 Sample folders, 174 GB
+ls PKG-ENQ-2379-Data_Transfer-PSEQ-1603/ | wc -l # 193 == 192 Sample folders, 85 GB
+
+# should have 3 md5 sums
 cat PlatesGH.md5 # they match, so i can untar and start working on them
 # 88b36a80dbbf9fd8493e4255f7811f0e  PlatesGH_PKG-ENQ-2379-Data_Transfer-PSEQ-1586-trimmed.tar
 # 0167c4725ff9ac50390127cc6579118c  PlatesGH_PKG-ENQ-2379-Data_Transfer-PSEQ-1600.tar
@@ -129,4 +143,4 @@ ps -ef | grep tar # shows PIDs with word 'tar' in them (thus, picks up both md5s
 # mv PlatesGH/PlatesGH_PKG-ENQ-2379-Data_Transfer-PSEQ-1603.tar Amazon_archive_files_to_rm_at_end/
 # mv ~/_ArcDyn/amazon-glacier-douglasyu20190113.md5 ~/_ArcDyn/Amazon_archive_files_to_rm_at_end/
 # mv ~/_ArcDyn/Plates*/Plates*.md5 ~/_ArcDyn/Amazon_archive_files_to_rm_at_end/
-ls ~/_ArcDyn/Amazon_archive_files_to_rm_at_end
+# ls ~/_ArcDyn/Amazon_archive_files_to_rm_at_end
