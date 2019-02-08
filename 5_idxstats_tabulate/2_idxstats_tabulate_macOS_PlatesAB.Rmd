@@ -63,10 +63,12 @@ samtoolsqual <- "q48"
 # outputidxstatstabulatefolder <- "AB_outputs_20190116_F2308_f0x2_q48_minimap2_406barcodes"
 
 # use this version for 349 mitogenomes&COI_CYTB sequences
-idxstatsgenomecovfolder <- paste0("outputs_PlatesAB_", samtoolsfilter, "_", samtoolsqual, "_minimap2_outputs_20190202_349MITOCOICYTB")  # this is the enclosing folder around the idxstats and genomcov files for a given set of soups
-# outputs_PlatesAB_F2308_f0x2_q48_minimap2_outputs_20190202_349MITOCOICYTB
+# 20190202 version used minimap2 2.10, like all previous runs
+# 20190204 version used minimap2 2.15
+idxstatsgenomecovfolder <- paste0("outputs_PlatesAB_", samtoolsfilter, "_", samtoolsqual, "_minimap2_outputs_20190204_349MITOCOICYTB")  # this is the enclosing folder around the idxstats and genomcov files for a given set of soups
+# outputs_PlatesAB_F2308_f0x2_q48_minimap2_outputs_20190204_349MITOCOICYTB
 # this is where i store the outputs of this script
-outputidxstatstabulatefolder <- "AB_outputs_20190202_F2308_f0x2_q48_minimap2_349MITOCOICYTB"
+outputidxstatstabulatefolder <- "AB_outputs_20190204_F2308_f0x2_q48_minimap2_349MITOCOICYTB"
 
 idxstatsfile <- paste0("*", samtoolsfilter, "_", samtoolsqual, "_sorted.bam_idxstats\\.txt")  
     # e.g. "*F2308_f0x2_q1_sorted.bam_idxstats\\.txt"
@@ -319,12 +321,13 @@ genomecoverages_summ <- do.call(rbind, genomecoverages_summ)
     # read in genomecov file
     # genomecoverages_summ <- readRDS(file.path(outputidxstatstabulatefolder, "genomecoverages_summ_PlatesAB_20190115_308mitogenomes.RDS"))
      # genomecoverages_summ <- readRDS(file.path(outputidxstatstabulatefolder, "genomecoverages_summ_PlatesAB_20190116_406barcodes.RDS"))
-    # genomecoverages_summ <- readRDS(file.path(outputidxstatstabulatefolder, "genomecoverages_summ_PlatesAB_20190202_349MITOCOICYTB.RDS"), compress = TRUE)
+    # MITOCOICYTB
+    # genomecoverages_summ <- readRDS(file.path(outputidxstatstabulatefolder, "genomecoverages_summ_PlatesAB_20190204_349MITOCOICYTB.RDS"))
    
     # save files
     # saveRDS(genomecoverages_summ, file.path(outputidxstatstabulatefolder, "genomecoverages_summ_PlatesAB_20190115_308mitogenomes.RDS", compress = TRUE))
     # saveRDS(genomecoverages_summ, file.path(outputidxstatstabulatefolder, "genomecoverages_summ_PlatesAB_20190116_406barcodes.RDS", compress = TRUE))
-    # saveRDS(genomecoverages_summ, file.path(outputidxstatstabulatefolder, "genomecoverages_summ_PlatesAB_20190202_349MITOCOICYTB.RDS"), compress = TRUE)
+    # saveRDS(genomecoverages_summ, file.path(outputidxstatstabulatefolder, "genomecoverages_summ_PlatesAB_20190204_349MITOCOICYTB.RDS"), compress = TRUE)
 
 # left_join genomecoverages_summ to idx_meta
 idx_meta_genomecov <- left_join(idx_meta, genomecoverages_summ) # R message:  Joining, by = c("mitogenome", "sample", "well", "samtools_filter")
@@ -445,12 +448,12 @@ idxstats_by_mitogenome <- idx_meta_genomecov %>%
 
 # write_tsv(idx_meta_genomecov, file.path(outputidxstatstabulatefolder, "idx_meta_genomecov_PlatesAB_20190115_308mitogenomes.txt")) # output file for merging with the other RUN outputs
 # write_tsv(idx_meta_genomecov, file.path(outputidxstatstabulatefolder, "idx_meta_genomecov_PlatesAB_20190116_406barcodes.txt")) # output file for merging with the other RUN outputs
-# write_tsv(idx_meta_genomecov, file.path(outputidxstatstabulatefolder, "idx_meta_genomecov_PlatesAB_20190202_349MITOCOICYTB.txt")) # output file for merging with the other RUN outputs
+# write_tsv(idx_meta_genomecov, file.path(outputidxstatstabulatefolder, "idx_meta_genomecov_PlatesAB_20190204_349MITOCOICYTB.txt")) # output file for merging with the other RUN outputs
 
 # in case i want to read in the output datafiles
 # idx_meta_genomecov <- read_delim(file.path(outputidxstatstabulatefolder, "idx_meta_genomecov_PlatesAB_20190115_308mitogenomes.txt"), delim = "\t", escape_double = FALSE, trim_ws = TRUE)
 # idx_meta_genomecov <- read_delim(file.path(outputidxstatstabulatefolder, "idx_meta_genomecov_PlatesAB_20190116_406barcodes.txt"), delim = "\t", escape_double = FALSE, trim_ws = TRUE)
-# idx_meta_genomecov <- read_delim(file.path(outputidxstatstabulatefolder, "idx_meta_genomecov_PlatesAB_20190202_349MITOCOICYTB.txt"), delim = "\t", escape_double = FALSE, trim_ws = TRUE)
+# idx_meta_genomecov <- read_delim(file.path(outputidxstatstabulatefolder, "idx_meta_genomecov_PlatesAB_20190204_349MITOCOICYTB.txt"), delim = "\t", escape_double = FALSE, trim_ws = TRUE)
 ```
 
 

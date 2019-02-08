@@ -6,6 +6,10 @@ output: html_document
 ---
 This code takes the output files from 5_merge_idx_meta_genomecov.Rmd and combines with the taxonomy data to create input files for the environmental and mock-sample analyses
 
+The code is a bit confusing because i have a choice of which dataset to use for the 'mitogenomes' dataset.  I always include the 406 barcodes dataset, and then i have a choice of including the 308mitogenomes or the 349MITOCOICYTB dataset.  (and to make it a bit more confusing, i can choose between the 20190202 run (minimap2 2.10) or the 20190204 run (minimap2 2.15) for the 349MITOCOICYTB dataset). For now, i am going with the 349MITOCOICYTB_20190204 dataset.  
+
+To reduce code changes, after i load the 349MITOCOICYTB_20190204, i call it the 'mitogenomes' dataset, since the 349MITOCOICYTB_20190202/4 and the 308mitogenomes dataset are both mainly made up of mitogenomes.
+
 setwd("~/Dropbox/Working_docs/Roslin_Greenland/2017/bulk_samples/ArcDyn_scripts/5_idxstats_tabulate")
 
 ```{r load packages}
@@ -74,14 +78,17 @@ fastq_read_counts_PlatesABA2B2EFGH %>%
 rm(fastq_read_counts_PlatesAB, fastq_read_counts_PlatesA2B2, fastq_read_counts_PlatesEF, fastq_read_counts_PlatesGH) 
 ```
 
-Load saved idx_meta_genomecov_ABA2B2EFGH files, barcodes and mitogenomes
+Load saved idx_meta_genomecov_ABA2B2EFGH files, barcodes, mitogenomes, and MITOCOICYTB
 ```{r}
 barcodesoutputidxstatstabulatefolder <- "../../PlatesABA2B2EFGH/minimap2_406barcodes_20190116" 
-mitogenomesoutputidxstatstabulatefolder <- "../../PlatesABA2B2EFGH/minimap2_308mitogenomes_20190115"
+# mitogenomesoutputidxstatstabulatefolder <- "../../PlatesABA2B2EFGH/minimap2_308mitogenomes_20190115"
+MITOCOICYTBoutputidxstatstabulatefolder <- "../../PlatesABA2B2EFGH/minimap2_349MITOCOICYTB_20190204"
 
 idx_meta_genomecov_ABA2B2EFGH_barcodes <- read_delim(file.path(barcodesoutputidxstatstabulatefolder, "idx_meta_genomecov_ABA2B2EFGH_minimap2_20190116_406barcodes.txt"), delim = "\t", escape_double = FALSE, trim_ws = TRUE)
 
-idx_meta_genomecov_ABA2B2EFGH_mitogenomes <- read_delim(file.path(mitogenomesoutputidxstatstabulatefolder, "idx_meta_genomecov_ABA2B2EFGH_minimap2_20190115_308mitogenomes.txt"), delim = "\t", escape_double = FALSE, trim_ws = TRUE)
+# idx_meta_genomecov_ABA2B2EFGH_mitogenomes <- read_delim(file.path(mitogenomesoutputidxstatstabulatefolder, "idx_meta_genomecov_ABA2B2EFGH_minimap2_20190115_308mitogenomes.txt"), delim = "\t", escape_double = FALSE, trim_ws = TRUE)
+
+idx_meta_genomecov_ABA2B2EFGH_MITOCOICYTB <- read_delim(file.path(MITOCOICYTBoutputidxstatstabulatefolder, "idx_meta_genomecov_ABA2B2EFGH_minimap2_20190204_349MITOCOICYTB.txt"), delim = "\t", escape_double = FALSE, trim_ws = TRUE)
 ```
 
 Make table of barcode names after running the above for the barcode idx_meta_genomecov files
@@ -113,8 +120,9 @@ barcodes <- barcodes %>%
     # Diptera_Anthomyiidae_Zaphne_frontata_tundrica_BOLD:AAG1723
 ```
 
-Make table of mitogenome names
-```{r}
+Make table of mitogenome names for 308 mitogenomes dataset.
+DO NOT RUN THIS CHUNK
+```{r, eval = FALSE}
 # idx_meta_genomecov_ABA2B2EFGH_mitogenomes <- idx_meta_genomecov_ABA2B2EFGH
 #  
 # rm(idx_meta_genomecov_A2B2, idx_meta_genomecov_AB, idx_meta_genomecov_EF, idx_meta_genomecov_GH, idx_meta_genomecov_ABA2B2EFGH) 
@@ -154,6 +162,61 @@ mitotaxonomies <-  left_join(idx_meta_genomecov_ABA2B2EFGH_mitogenomes, mitotaxo
 mitotaxonomies <- mitotaxonomies %>% 
     dplyr::select(BOLD, Order, Family, Genus, mitogenome, mt_length) %>% 
     distinct(BOLD, .keep_all = TRUE) # merge and reduce to 308 unique mitogenomes
+```
+
+Make table of MITOCOICYTB names for 349 MITOCOICYTB dataset
+```{r}
+# idx_meta_genomecov_ABA2B2EFGH_mitogenomes <- idx_meta_genomecov_ABA2B2EFGH
+#  
+# rm(idx_meta_genomecov_A2B2, idx_meta_genomecov_AB, idx_meta_genomecov_EF, idx_meta_genomecov_GH, idx_meta_genomecov_ABA2B2EFGH) 
+
+# taxonomyfilepath <- "~/Dropbox/Working_docs/Roslin_Greenland/2017/bulk_samples/ArcDyn_scripts/6_referenceseqs_metadata/mitogenomes_barcodes"
+taxonomyfilepath <- "../6_referenceseqs_metadata/mitogenomes_barcodes"
+taxonomyfile <- "Species_for_mitogenome_sequencing_20190123.xlsx"
+
+mitotaxonomies <- read_excel(file.path(taxonomyfilepath, taxonomyfile), sheet = "mitogenome_database", na = "NA") %>% 
+    dplyr::filter(mitogenome_status != "failed") # 366
+# mitogenome_status == "failed" indicates specimens that failed sequencing at Copenhagen and were then sent to EI. These species are given two rows. I only want the EI row
+# 41 of the rows are COI_CytB sequences, as expected
+
+mitotaxonomies <- mitotaxonomies %>% 
+    dplyr::select(Yinqiu_mitogenome_fastaname, Order, Family, Genus, Species_BOLD)
+
+mitotaxonomies <- mitotaxonomies %>% 
+    tidyr::separate(Species_BOLD, sep = " ", into = c("Genus2", "Species_BOLD")) %>% 
+    dplyr::select(-Genus2)
+# ifelse(mitotaxonomies$Genus == mitotaxonomies$Genus2, 1, 0) # Genus and Genus2 are the same, so i can delete Genus2
+
+mitotaxonomies$Species_BOLD <- str_replace(mitotaxonomies$Species_BOLD, "_BOLD", "__BOLD") # delimit species epithet and BOLD:number
+
+mitotaxonomies <- mitotaxonomies %>% 
+    tidyr::separate(Species_BOLD, sep = "__", into = c("Species", "BOLD")) 
+# separate species epithet and BOLD:number
+
+# sanity check
+mitotaxonomies %>% distinct(BOLD) %>% count() # 366 unique BOLD numbers
+
+mitotaxonomies <-  left_join(idx_meta_genomecov_ABA2B2EFGH_MITOCOICYTB, mitotaxonomies, by = c("mitogenome" = "Yinqiu_mitogenome_fastaname")) %>% 
+    dplyr::filter(COI_Species != "COI_Spike") %>% # remove COI_spike species
+    dplyr::select(-COI_Species) # remove column indicating COI_spike species
+
+# names(mitotaxonomies)
+
+mitotaxonomies <- mitotaxonomies %>% 
+    dplyr::select(BOLD, Order, Family, Genus, mitogenome, mt_length) %>% 
+    distinct(BOLD, .keep_all = TRUE) # merge and reduce to 349 unique mitogenomes and COICYTB sequences
+```
+
+COI_CytB_ACX5953_Diptera_Chironomidae_Diamesa_arctica_COIsameAsACW5472 has two BOLD numbers:  ACW5472 and ACX5953.  ACW5472 is used in the Barcodes database and ACX5953 is the BOLD number in the mitogenomes database
+
+to allow full merging of the two datasets, i need to replace ACX5953 with ACW5472 in the mitotaxonomies dataset
+
+```{r}
+mitotaxonomies <- mitotaxonomies %>% 
+    mutate(BOLD = case_when(
+        BOLD == "BOLD:ACX5953" ~ "BOLD:ACW5472",
+        TRUE ~ as.character(BOLD)
+    ))
 ```
 
 # species dataset #
@@ -270,47 +333,6 @@ env_seq_depth <- left_join(env_seq_depth, fastq_read_counts_PlatesABA2B2EFGH) %>
     arrange(sample) 
 ```
 
-# env_data_mitogenome dataset #
-```{r}
-env_data_mitogenome <- idx_meta_genomecov_ABA2B2EFGH_mitogenomes %>% 
-    dplyr::mutate(run = EI_RUN) %>% 
-    dplyr::mutate(EI_RUN = str_remove(EI_RUN, "idx_meta_genomecov_")) %>% 
-    dplyr::mutate(DateTrapRun = str_c(DateTrap, "_", EI_RUN)) %>% 
-    dplyr::select(DateTrapRun, mitogenome, PC, mapped_reads, COI_Species)
-
-env_data_mitogenome <- left_join(env_data_mitogenome, species) # this will generate extra Order.y, Family.y, Genus.y columns from the species dataframe. We ignore them
-
-env_data_mitogenome <- env_data_mitogenome %>% 
-    dplyr::select(sample = DateTrapRun, sp, PC, mapped_reads, mitogenome, COI_Species)
-
-spikes # table of COI_spike species, to refer to for the code below
-
-# add spike1,2,3 to sp column
-env_data_mitogenome <- env_data_mitogenome %>% 
-    mutate(
-    sp = case_when(
-        mitogenome == "Lepidoptera_Bombycidae_Bombyx_mori_COI" ~ "spike1",
-        mitogenome == "Coleoptera_Mordellidae_COI" ~ "spike2",
-        mitogenome == "Coleoptera_Elateridae_COI" ~ "spike3",
-        TRUE ~ as.character(sp)
-    )
-)
-
-env_data_mitogenome <- env_data_mitogenome %>% 
-    dplyr::filter(mapped_reads > 0) %>%  
-    dplyr::select(sample, sp, PC, mapped_reads) 
-
-env_data_mitogenome <- env_data_mitogenome %>% 
-    mutate(
-        PC = case_when(
-            sp == "spike1" ~ NA_real_,
-            sp == "spike2" ~ NA_real_,
-            sp == "spike3" ~ NA_real_,
-            TRUE ~ PC
-        )
-    )
-```
-
 # env_data_COI dataset #
 ```{r}
 env_data_COI <- idx_meta_genomecov_ABA2B2EFGH_barcodes %>% 
@@ -352,15 +374,101 @@ env_data_COI <- env_data_COI %>%
     )
 ```
 
+# env_data_mitogenome dataset #
+DO NOT RUN THIS CHUNK
+```{r, eval=FALSE}
+env_data_mitogenome <- idx_meta_genomecov_ABA2B2EFGH_mitogenomes %>% 
+    dplyr::mutate(run = EI_RUN) %>% 
+    dplyr::mutate(EI_RUN = str_remove(EI_RUN, "idx_meta_genomecov_")) %>% 
+    dplyr::mutate(DateTrapRun = str_c(DateTrap, "_", EI_RUN)) %>% 
+    dplyr::select(DateTrapRun, mitogenome, PC, mapped_reads, COI_Species)
 
-Load saved mocks_idx_meta_genomecov files
+env_data_mitogenome <- left_join(env_data_mitogenome, species) # this will generate extra Order.y, Family.y, Genus.y columns from the species dataframe. We ignore them
+
+env_data_mitogenome <- env_data_mitogenome %>% 
+    dplyr::select(sample = DateTrapRun, sp, PC, mapped_reads, mitogenome, COI_Species)
+
+spikes # table of COI_spike species, to refer to for the code below
+
+# add spike1,2,3 to sp column
+env_data_mitogenome <- env_data_mitogenome %>% 
+    mutate(
+    sp = case_when(
+        mitogenome == "Lepidoptera_Bombycidae_Bombyx_mori_COI" ~ "spike1",
+        mitogenome == "Coleoptera_Mordellidae_COI" ~ "spike2",
+        mitogenome == "Coleoptera_Elateridae_COI" ~ "spike3",
+        TRUE ~ as.character(sp)
+    )
+)
+
+env_data_mitogenome <- env_data_mitogenome %>% 
+    dplyr::filter(mapped_reads > 0) %>%  
+    dplyr::select(sample, sp, PC, mapped_reads) 
+
+env_data_mitogenome <- env_data_mitogenome %>% 
+    mutate(
+        PC = case_when(
+            sp == "spike1" ~ NA_real_,
+            sp == "spike2" ~ NA_real_,
+            sp == "spike3" ~ NA_real_,
+            TRUE ~ PC
+        )
+    )
+```
+
+
+# env_data_MITOCOICYTB dataset #  will save as env_data_mitogenome
+```{r}
+env_data_mitogenome <- idx_meta_genomecov_ABA2B2EFGH_MITOCOICYTB %>% 
+    dplyr::mutate(run = EI_RUN) %>% 
+    dplyr::mutate(EI_RUN = str_remove(EI_RUN, "idx_meta_genomecov_")) %>% 
+    dplyr::mutate(DateTrapRun = str_c(DateTrap, "_", EI_RUN)) %>% 
+    dplyr::select(DateTrapRun, mitogenome, PC, mapped_reads, COI_Species)
+
+env_data_mitogenome <- left_join(env_data_mitogenome, species) # this will generate extra Order.y, Family.y, Genus.y columns from the species dataframe. We ignore them
+
+env_data_mitogenome <- env_data_mitogenome %>% 
+    dplyr::select(sample = DateTrapRun, sp, PC, mapped_reads, mitogenome, COI_Species)
+
+spikes # table of COI_spike species, to refer to for the code below
+
+# add spike1,2,3 to sp column
+env_data_mitogenome <- env_data_mitogenome %>% 
+    mutate(
+    sp = case_when(
+        mitogenome == "Lepidoptera_Bombycidae_Bombyx_mori_COI" ~ "spike1",
+        mitogenome == "Coleoptera_Mordellidae_COI" ~ "spike2",
+        mitogenome == "Coleoptera_Elateridae_COI" ~ "spike3",
+        TRUE ~ as.character(sp)
+    )
+)
+
+env_data_mitogenome <- env_data_mitogenome %>% 
+    dplyr::filter(mapped_reads > 0) %>%  
+    dplyr::select(sample, sp, PC, mapped_reads) 
+
+env_data_mitogenome <- env_data_mitogenome %>% 
+    mutate(
+        PC = case_when(
+            sp == "spike1" ~ NA_real_,
+            sp == "spike2" ~ NA_real_,
+            sp == "spike3" ~ NA_real_,
+            TRUE ~ PC
+        )
+    )
+```
+
+Load saved mocks_idx_meta_genomecov files.  The minimap2_349MITOCOICYTB_20190204 dataset is the one that we now want for 
 ```{r}
 barcodesoutputidxstatstabulatefolder <- "../../PlatesABA2B2EFGH/minimap2_406barcodes_20190116" 
-mitogenomesoutputidxstatstabulatefolder <- "../../PlatesABA2B2EFGH/minimap2_308mitogenomes_20190115"
+# mitogenomesoutputidxstatstabulatefolder <- "../../PlatesABA2B2EFGH/minimap2_308mitogenomes_20190115"
+MITOCOICYTBoutputidxstatstabulatefolder <- "../../PlatesABA2B2EFGH/minimap2_349MITOCOICYTB_20190204"
 
 mocks_idx_meta_genomecov_EFGH_barcodes <- read_delim(file.path(barcodesoutputidxstatstabulatefolder, "mocks_idx_meta_genomecov_EFGH_minimap2_20190116_406barcodes.txt"), delim = "\t", escape_double = FALSE, trim_ws = TRUE)
 
-mocks_idx_meta_genomecov_EFGH_mitogenomes <- read_delim(file.path(mitogenomesoutputidxstatstabulatefolder, "mocks_idx_meta_genomecov_EFGH_minimap2_20190115_308mitogenomes.txt"), delim = "\t", escape_double = FALSE, trim_ws = TRUE)
+# mocks_idx_meta_genomecov_EFGH_mitogenomes <- read_delim(file.path(mitogenomesoutputidxstatstabulatefolder, "mocks_idx_meta_genomecov_EFGH_minimap2_20190115_308mitogenomes.txt"), delim = "\t", escape_double = FALSE, trim_ws = TRUE)
+
+idx_meta_genomecov_ABA2B2EFGH_MITOCOICYTB <- read_delim(file.path(MITOCOICYTBoutputidxstatstabulatefolder, "mocks_idx_meta_genomecov_ABA2B2EFGH_minimap2_20190204_349MITOCOICYTB.txt"), delim = "\t", escape_double = FALSE, trim_ws = TRUE)
 
 mocks_idx_meta_genomecov_EFGH_barcodes <-  mocks_idx_meta_genomecov_EFGH_barcodes %>%  
     mutate(
@@ -373,7 +481,17 @@ mocks_idx_meta_genomecov_EFGH_barcodes <-  mocks_idx_meta_genomecov_EFGH_barcode
 
 mocks_idx_meta_genomecov_EFGH_barcodes$sample %>% unique()
 
-mocks_idx_meta_genomecov_EFGH_mitogenomes <-  mocks_idx_meta_genomecov_EFGH_mitogenomes %>% 
+# mocks_idx_meta_genomecov_EFGH_mitogenomes <-  mocks_idx_meta_genomecov_EFGH_mitogenomes %>% 
+#     mutate(
+#         sample = case_when(
+#             sample == "PlateGH_COI_1_negative_control" ~ "PlateGH_negative_control_1",
+#             sample == "PlateGH_COI_2_negative_control" ~ "PlateGH_negative_control_2",
+#             TRUE ~ as.character(sample)
+#         )
+#     )
+
+# I use mocks_idx_meta_genomecov_EFGH_mitogenomes because the downstream statistical code use 'mitogenomes' for the long-reference mapping dataset
+mocks_idx_meta_genomecov_EFGH_mitogenomes <-  idx_meta_genomecov_ABA2B2EFGH_MITOCOICYTB %>% 
     mutate(
         sample = case_when(
             sample == "PlateGH_COI_1_negative_control" ~ "PlateGH_negative_control_1",
@@ -381,6 +499,7 @@ mocks_idx_meta_genomecov_EFGH_mitogenomes <-  mocks_idx_meta_genomecov_EFGH_mito
             TRUE ~ as.character(sample)
         )
     )
+
 
 mocks_idx_meta_genomecov_EFGH_mitogenomes$sample %>% unique() 
 ```
@@ -477,7 +596,7 @@ Save datasets into a single RData file
 
 save(species, spikes, mock_design, mock_data_mitogenome, mock_data_COI,
      env_design, env_data_mitogenome, env_data_COI, mock_seq_depth, env_seq_depth,
-     file = "input_data_step5.RData")
+     file = "input_data_step5_20190204.RData")
 ```
 
 END

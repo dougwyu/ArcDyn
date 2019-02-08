@@ -65,7 +65,7 @@ ls
 mkdir ${OUTPUTFOLDER}_Plates${PLATE}/
 ls
 ls ${OUTPUTFOLDER}_Plates${PLATE}/
-"ls" -l BWA*/s*${PLATE}*.out # check if all BWA folders have a current smtl*.out file, showing that samtools ran correctly.  Check the sizes of the samtools.out file.  they should all be about the same.
+"ls" -l BWA*/s*${PLATE}*.out # check if all 10 BWA folders have a current smtl*.out file, showing that samtools ran correctly.  Check the sizes of the samtools.out file.  they should all be about the same.
 ####### THEN JUMP DOWN AND RUN THE GENERIC CODE below
 
 
@@ -110,7 +110,7 @@ parallel ls ${OUTPUTFOLDER}_Plates${PLATE}/*_{1}_q{2}_sorted_genomecov_d.txt.gz 
 
 # rename, tar, and gzip for download
 MAPDATE="20190204"
-TARGET="349MITOCOICYTB" # "308mitogenomes", "406barcodes", "349MTCOICYTB"
+TARGET="349MITOCOICYTB" # "308mitogenomes", "406barcodes", "349MITOCOICYTB"
 du -sh ${OUTPUTFOLDER}_Plates${PLATE}/ # ~4.5-5.0 GB
 # set filename to something that i can understand after download
 mv ${OUTPUTFOLDER}_Plates${PLATE} outputs_Plates${PLATE}_${FILTER1}_q${QUAL2}_${OUTPUTFOLDER}_${MAPDATE}_${TARGET}
