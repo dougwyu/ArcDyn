@@ -589,14 +589,21 @@ mock_seq_depth <- left_join(mock_seq_depth, fastq_read_counts_PlatesABA2B2EFGH, 
     arrange(sample) 
 ```
 
-Save datasets into a single RData file
+Save datasets into a single RData file, checking that the filename doesn't already exist
 ```{r}
-# setwd("~/Dropbox/Working_docs/Roslin_Greenland/2018/manuscript_methods/201901248_Ecoletts/Rcode/Rdata")
+# setwd("~/Dropbox/Working_docs/Roslin_Greenland/2017/bulk_samples/ArcDyn_scripts/7_ecological_analysis/Rdata")
 # getwd()
+mainDir = "~/Dropbox/Working_docs/Roslin_Greenland/2017/bulk_samples/ArcDyn_scripts/7_ecological_analysis/Rdata"
+filename = "input_data_step5_20190204.RData"
 
-save(species, spikes, mock_design, mock_data_mitogenome, mock_data_COI,
+if(file_test("-f", file.path(mainDir, filename))) {  # test if file already exists "-f"
+    stop("File can't be saved because a file with that name already exists.") 
+  } else {
+    save(species, spikes, mock_design, mock_data_mitogenome, mock_data_COI,
      env_design, env_data_mitogenome, env_data_COI, mock_seq_depth, env_seq_depth,
-     file = "input_data_step5_20190204.RData")
+     file = filename)
+  }
+
 ```
 
 END
@@ -604,14 +611,10 @@ END
 
 
 
+Previous code.  Ignore.
 
 
-
-
-Previous code.  Ignore this.
-
-
-Loading input_data_step5_20190120.RData, which is correctly formatted for downstream statistical analysis. I use these datafiles as my template for the above code. For viewing convenience, I then put these files into an Excel spreadsheet (saved to the manuscript_methods/ folder)
+Loading input_data_step5_20190120.RData, which is correctly formatted for downstream statistical analysis. I used these datafiles as my template examples for the above code. For viewing convenience, I then put these files into an Excel spreadsheet (saved to the manuscript_methods/ folder)
 ```{r load input_data_step5_20190120.RData, eval=FALSE}
 pathtoexampledata = "~/Dropbox/Working_docs/Roslin_Greenland/2018/manuscript_methods/EcoLetts_20190120/Rcode/Rdata"  
 
@@ -641,9 +644,7 @@ tibble(spikes)
 # write_tsv(spikes, "spikes.tsv")
 ```
 
-
-
-Previous code. Ignore this. 
+Previous code. Ignore. 
 
 ```{r soupdata308, eval=FALSE}
 # mapping outputs 
