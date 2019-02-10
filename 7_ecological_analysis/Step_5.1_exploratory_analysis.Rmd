@@ -1,0 +1,134 @@
+---
+title: "exploratory"
+author: "Douglas Yu"
+date: "08/02/2019"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(pheatmap)
+library(lubridate)
+library(hablar)
+# library(grateful)
+sessionInfo()
+```
+
+
+```{r}
+localDir = "."
+dataDir = file.path(localDir, "Rdata")
+# load(file.path(dataDir, "input_data_step5_20190115.RData")) # 308 mitogenomes, minimap2 v 2.10, version used for SPIKEPIPE paper
+load(file.path(dataDir, "input_data_step5_20190204.RData")) # 349 MITOCOICYTB, minimap2 v 2.15
+```
+
+```{r}
+env_data_mitogenome2 <- env_data_mitogenome %>% 
+    tidyr::separate(sample, into = c("Date", "Year", "Month", "Day", "Trap", "EI_Run"), sep = "_", remove = TRUE) %>% 
+    dplyr::select(-Date) %>% 
+    tidyr::unite("Date", c("Year", "Month", "Day"), sep = "-") %>%  # use "-" for compatibility with hablar
+    hablar::convert(dte(Date)) # convert(.df, dte(.x))
+
+env_data_mitogenome2 <- left_join(env_data_mitogenome2, species) %>% 
+    dplyr::filter(PC >= 0.1) %>% 
+    count(mitogenome) %>% 
+    arrange(desc(n))
+
+env_data_mitogenome2 %>% dplyr::filter(n >= 5) %>% count()
+```
+
+
+
+
+```{r}
+mock_data_mitogenome2 <- left_join(mock_data_mitogenome, species) %>% 
+    dplyr::filter(PC >= 0.01) %>% 
+    dplyr::select(sample, plate, sp, PC, mapped_reads, Order, Family, Genus, Species_BOLD, mt_length, COI_length) %>% 
+    left_join(mock_design, by = c("sample", "plate", "sp" = "input_sp")) %>%
+    dplyr::select(sample, plate, sp, input_amount, PC, mapped_reads, everything()) %>% 
+    arrange(sample, desc(input_amount), desc(mapped_reads))
+
+
+```
+
+
+
+old code
+```{r pretty heatmap}
+# use only 1997 & 2013, only PlatesAB (or PlatesA2B2), only one Trap (A, B, or C), include the taxonomic columns
+# create new column:  DateTrapEIRUN
+# create variable from Date, Trap(ABC), and EI_RUN:  e.g. Date_1997_08_04_TrapA_AB
+# stringr::str_pad(x, width = 2, side = "left", pad = "0")  # to ensure that the date always has two digits, e.g. 07.
+# stringr::str_replace(idx_meta_genomecov_AB$EI_RUN, "idx_meta_genomecov_", "") # to extract AB, A2B2, EF, GH from EI_RUN
+# idx_meta_genomecov_ABA2B2EFGH$DateTrapEIRUN <- str_c("Sample", year(idx_meta_genomecov_ABA2B2EFGH$Date), str_pad(month(idx_meta_genomecov_ABA2B2EFGH$Date), 2, side = "left", pad = "0"), str_pad(day(idx_meta_genomecov_ABA2B2EFGH$Date), 2, side = "left", pad = "0"), idx_meta_genomecov_ABA2B2EFGH$Trap, str_replace(idx_meta_genomecov_ABA2B2EFGH$EI_RUN, "idx_meta_genomecov_", ""), sep = "_")
+
+idx_meta_genomecov_ABA2B2EFGH$DateEIRUN <- str_c("Sample", year(idx_meta_genomecov_ABA2B2EFGH$Date), str_pad(month(idx_meta_genomecov_ABA2B2EFGH$Date), 2, side = "left", pad = "0"), str_pad(day(idx_meta_genomecov_ABA2B2EFGH$Date), 2, side = "left", pad = "0"), str_replace(idx_meta_genomecov_ABA2B2EFGH$EI_RUN, "idx_meta_genomecov_", ""), sep = "_")
+
+pctcovermin <- 0.10
+eirun <- "idx_meta_genomecov_AB"
+trap <- c("TrapA", "TrapB", "TrapC")
+# years <- c(1997, 2013)
+years <- c(1997, 1998, 1999, 2011, 2012, 2013)
+
+# Make wide table for visualisation (left to right should follow temporal order (Date))
+idx_meta_genomecov_wide_pctcovmin <- idx_meta_genomecov_ABA2B2EFGH %>% 
+    dplyr::mutate(Year = year(Date)) %>% 
+    dplyr::filter(EI_RUN == eirun, pct_coverage >= pctcovermin, Trap %in% trap, Year %in% years) %>% 
+    dplyr::select(DateEIRUN, EI_RUN, Date, Trap, Year, mitogenome, Order, Family, Genus, Species_BOLD, mapped_reads_COI_lysis_corr) %>%
+    dplyr::group_by(Order, Family, Genus, Species_BOLD, DateEIRUN, Date) %>% 
+    dplyr::summarise(mapped_reads_COI_lysis_corr_mean = round(mean(as.numeric(mapped_reads_COI_lysis_corr)))) %>% 
+    dplyr::arrange(Date) %>% 
+    tidyr::spread(DateEIRUN, mapped_reads_COI_lysis_corr_mean) %>% 
+    dplyr::arrange(Order, Family, Genus, Species_BOLD)
+
+# change the sample columns to numeric and replace NA with 0s
+idx_meta_genomecov_wide_pctcovmin <- idx_meta_genomecov_wide_pctcovmin %>%
+    mutate_at(vars(starts_with("Sample_")), funs(as.numeric(.))) %>%
+    mutate_at(vars(starts_with("Sample_")), funs(if_else(is.na(.), 0, .)))
+
+# add up rows that have the same taxonomy
+idx_meta_genomecov_wide_pctcovmin <- idx_meta_genomecov_wide_pctcovmin %>% 
+    group_by(Order, Family, Genus) %>% 
+    summarise_at(vars(starts_with("Sample_")), funs(sum(as.numeric(.)))) %>%
+    arrange(Order, Family, Genus)
+
+# remove any species (rows that have 0 total reads)
+idx_meta_genomecov_wide_pctcovmin <- idx_meta_genomecov_wide_pctcovmin %>% 
+    dplyr::ungroup() %>%   # must ungroup or dplyr forces Order, Family to be included in rowSums
+    dplyr::mutate(readsum = rowSums(select(., starts_with("Sample_")))) %>% 
+    dplyr::filter(readsum > 0) %>% 
+    dplyr::select(-readsum)
+
+# create taxonomy column from taxonomic ranks
+idx_meta_genomecov_wide_pctcovmin <- idx_meta_genomecov_wide_pctcovmin %>% tidyr::unite(taxonomy, Order, Family, Genus) 
+
+# place taxonomy in rownames
+idx_meta_genomecov_wide_pctcovmin <- idx_meta_genomecov_wide_pctcovmin %>% column_to_rownames(var = "taxonomy")
+
+
+arcdynheat <- idx_meta_genomecov_wide_pctcovmin %>% as.matrix(idx_meta_genomecov_wide_pctcovmin)
+
+cal_z_score <- function(x){
+  (x - mean(x)) / sd(x)
+}
+ 
+arcdynheat_norm <- t(apply(arcdynheat, 1, cal_z_score)) # 1 == margin = rows. 2 == cols
+
+# 1997, 2013 only, use gaps_col = c(9)
+# 1997, 1998, 1999, 2011, 2012, 2013, use gaps_col = c(9, 18, 26, 41, 54)
+pheatmap(arcdynheat_norm, 
+         color = colorRampPalette(c("white", "firebrick3"))(50),
+         # color = colorRampPalette(YlOrBr)(10),
+         # scale = "row",
+         # gaps_col = c(9),
+         gaps_col = c(9, 18, 26, 41, 54),
+         # display_numbers = TRUE,
+         clustering_method = "complete", # "complete", ward.D", "ward.D2", "single", "complete", "average" (= UPGMA), "mcquitty" (= WPGMA), "median" (= WPGMC) or "centroid" (= UPGMC).
+         clustering_distance_rows = "euclidean", # euclidean, manhattan, canberra, minkowski
+         cluster_cols = FALSE,
+         cluster_rows = TRUE,
+         cutree_rows = 5)
+
+# idx_meta-genomecov wide table for visualisation:  157 rows, 702 columns
+# write_tsv(idx_meta_genomecov_AB_wide_pctcovmin, "idx_meta_genomecov_AB_wide_pctcovmin_minimap2_20180721.txt")
+```
