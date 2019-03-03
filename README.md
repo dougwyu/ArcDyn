@@ -12,7 +12,7 @@ This version is the first draft version of the code for publication. This versio
 
 - merge and process the idxstats and genomecov files, merge by Run, and generate input data files for statistical analysis. 
 
-- The statistical analysis code is not here (in the Supp Info folder of the manuscript for now)
+- The statistical analysis code and the input data files for statistical analysis are in 7_ecological_analyses/.
 
 - reference files for use above (reference mitogenomes and barcodes, sample metadata, and taxonomy information for the mitogenomes and barcodes)
 
