@@ -5,9 +5,9 @@
 #setwd() set your working directory
 localDir = "."
 dataDir = file.path(localDir, "Rdata")
-# load(file.path(dataDir, "input_data_step5_20190115.RData"))
-# load(file.path(dataDir, "input_data_step5_20190202.RData"))
-load(file.path(dataDir, "input_data_step5_20190204.RData"))
+# load(file.path(dataDir, "input_data_step5_20190115.RData")) # 308 mitogenomes, minimap2 v 2.10, version used for SPIKEPIPE paper
+# load(file.path(dataDir, "input_data_step5_20190202.RData")) # 349 MITOCOICYTB, minimap2 v 2.10
+load(file.path(dataDir, "input_data_step5_20190204.RData")) # 349 MITOCOICYTB, minimap2 v 2.15
 #input_data_step5.RData includes the following data frames:
 #species: the species included in the study
 #spikes: the spikes used
@@ -127,3 +127,42 @@ for (i in 1:length(sp.in.model)){
 }
 summary(lm(sp.effect ~ mt.length))
 # TEST IF SPECIES EFFECTS ARE CORRELATED WITH MITOGENOME LENGTH (END) ################################################
+
+# generate the original SPIKEPIPE figure using data_grid, add_predictions, and ggplot
+library(modelr)
+library(tidyverse)
+
+da1 <- filter(da1, SP != "sp7") # drop Pardosa because there are only three points
+da1$SP <- fct_drop(da1$SP) # drop the non-mock species from the levels
+da1$SP %>% unique() # should only have 19 levels
+da1 <- da1 %>% left_join(species, by = c("SP" = "sp")) %>% 
+    select(-BOLD, -mitogenome, -COI, -mt_length, -COI_length, -omit_from_env) 
+da1 <- da1 %>% unite("family_genus_speciesBOLD", c("Family", "Genus", "Species_BOLD"))
+
+summary(mylm) # confirm this is optimal model:  logY ~ FSL + RUN + SP, data = da1
+theme <- theme_bw() + theme(plot.background = element_blank(),
+                            panel.grid.minor = element_blank(),
+                            panel.grid.major = element_blank(),
+                            axis.line = element_line(color = 'black'),
+                            legend.position="bottom",
+                            legend.text = element_text(size = 5))
+
+da1 <- da1 %>% 
+    add_predictions(mylm, var = "predlogY")
+
+ggplot(data = da1, aes(x = FSL, y = logY, colour = family_genus_speciesBOLD)) +
+    geom_point(alpha = 1, size = 2) +
+    geom_line(aes(y = predlogY)) +
+    theme +
+    facet_wrap(~ RUN) +
+    labs(colour = NULL, x = "Focal versus Standard and Lysis (FSL)", y = "Raw abundance")
+
+# if i want to create a data grid, but it's not necessary, and it creates fitted lines that span the full range of FSL
+# grid <- da1 %>% 
+#     data_grid(RUN, SP, FSL = seq_range(FSL, n = 20)) %>% 
+#     add_predictions(mylm, var = "logY") %>% 
+#     mutate(Y = exp(logY))
+
+# min(da1$logY)
+# max(da1$logY)
+
