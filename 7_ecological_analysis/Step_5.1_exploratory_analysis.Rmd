@@ -19,6 +19,7 @@ sessionInfo()
 localDir = "."
 dataDir = file.path(localDir, "Rdata")
 # load(file.path(dataDir, "input_data_step5_20190115.RData")) # 308 mitogenomes, minimap2 v 2.10, version used for SPIKEPIPE paper
+# load(file.path(dataDir, "input_data_step5_20190202.RData")) # 349 MITOCOICYTB, minimap2 v 2.10
 load(file.path(dataDir, "input_data_step5_20190204.RData")) # 349 MITOCOICYTB, minimap2 v 2.15
 ```
 
