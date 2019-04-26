@@ -132,30 +132,51 @@ summary(lm(sp.effect ~ mt.length))
 library(modelr)
 library(tidyverse)
 
-da1 <- filter(da1, SP != "sp7") # drop Pardosa because there are only three points
+# da1 <- filter(da1, SP != "sp7") # drop Pardosa because there are only three points
 da1$SP <- fct_drop(da1$SP) # drop the non-mock species from the levels
 da1$SP %>% unique() # should only have 19 levels
 da1 <- da1 %>% left_join(species, by = c("SP" = "sp")) %>% 
-    select(-BOLD, -mitogenome, -COI, -mt_length, -COI_length, -omit_from_env) 
-da1 <- da1 %>% unite("family_genus_speciesBOLD", c("Family", "Genus", "Species_BOLD"))
-
+    select(-BOLD, -mitogenome, -COI, -mt_length, -COI_length, -omit_from_env) %>% 
+    unite("family_genus_speciesBOLD", c("Family", "Genus", "Species_BOLD")) %>% 
+    mutate_at("family_genus_speciesBOLD", str_remove, "_BOLD:[\\w]+") %>% 
+    rename(family_genus_species = family_genus_speciesBOLD)
+    
 summary(mylm) # confirm this is optimal model:  logY ~ FSL + RUN + SP, data = da1
+
 theme <- theme_bw() + theme(plot.background = element_blank(),
                             panel.grid.minor = element_blank(),
                             panel.grid.major = element_blank(),
                             axis.line = element_line(color = 'black'),
                             legend.position="bottom",
-                            legend.text = element_text(size = 5))
+                            legend.text = element_text(size = 7))
 
 da1 <- da1 %>% 
     add_predictions(mylm, var = "predlogY")
 
-ggplot(data = da1, aes(x = FSL, y = logY, colour = family_genus_speciesBOLD)) +
+ggplot(data = da1, aes(x = FSL, y = logY, colour = family_genus_species)) +
     geom_point(alpha = 1, size = 2) +
     geom_line(aes(y = predlogY)) +
     theme +
     facet_wrap(~ RUN) +
-    labs(colour = NULL, x = "Focal versus Standard and Lysis (FSL)", y = "Raw abundance")
+    labs(colour = NULL, x = "Focal versus Standard and Lysis:  ln(FSL)", y = "Raw abundance:  ln(ng_DNA)") +
+    geom_abline(intercept = 6, slope = 1, size = 1, linetype = 2)
+# to do
+# replace y-axis values with back-transformed 'ng DNA' values (and log the axis)
+# adjust axis labels to give units and indicate that the axes are logged
+# label species names for the furthest left and right lines (maybe remove legend?) 
+# what is going on with the furthest left species (green dots, Spilogona megastoma or micans?)
+# decide whether to keep sp177 (Pardosa) in the figure
+
+
+
+# if i don't want to use different colors for the species and simply have multiple lines, one for each species, i use 'group = family_genus_species' in the mapping
+ggplot(data = da1, aes(x = FSL, y = logY, group = family_genus_species)) +
+    geom_point(alpha = 1, size = 2) +
+    geom_line(aes(y = predlogY)) +
+    theme +
+    facet_wrap(~ RUN) +
+    labs(colour = NULL, x = "Focal versus Standard and Lysis (FSL)", y = "Raw abundance") +
+    geom_abline(intercept = 6, slope = 1, size = 1, linetype = 2)
 
 # if i want to create a data grid, but it's not necessary, and it creates fitted lines that span the full range of FSL
 # grid <- da1 %>% 

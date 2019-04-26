@@ -1,0 +1,512 @@
+sa = samples[i]
+l_data = env_data[env_data$sample==sa,]
+l_env_design = env_design[env_design$sample==sa,]
+input = c(l_env_design$spike1,l_env_design$spike2,l_env_design$spike3)
+lysis = l_env_design$lysis_buffer_proportion
+spike_reads = c(l_data$mapped_reads[l_data$sp=="spike1"],
+l_data$mapped_reads[l_data$sp=="spike2"],
+l_data$mapped_reads[l_data$sp=="spike3"])
+spike = mean(spike_reads/input)
+for(j in 1:ns){
+sp = spp[j]
+sel = which(l_data$sp==sp)
+if(length(sel)>0){
+ll_data = l_data[sel,]
+if (!is.na(ll_data$PC)){
+PC[i,j] = ll_data$PC
+}
+if(PC[i,j]>0.1){
+FSL[i,j] = log(ll_data$mapped_reads/(lysis*spike))
+}
+}
+}
+}
+# COMPUTE PREDICTORS FOR EACH SAMPLE (END) #####################################
+# PREDICT SPECIES OCCURENCES (START) #####################################
+Y = 1*(PC>PC0)
+# PREDICT SPECIES OCCURENCES (END) #####################################
+# PREDICT SPECIES ABUNDANCES (START) #####################################
+YABU = BETA_FSL*FSL
+# PREDICT SPECIES ABUNDANCES (END) #####################################
+# MAKE A DATAFRAME THAT INCLUDES THE ENVIRONMENTAL SAMPLES FOR TRAP-DATE COMBINATIONS (START) #####################################
+TD = data.frame(trap = env_design$trap, date = env_design$date)
+TD = unique(TD)
+nTD = dim(TD)[1]
+index = rep(NA,ny)
+for (i in 1:nTD){
+sel = which(env_design$trap == TD$trap[i] & env_design$date == TD$date[i])
+index[sel] = i
+}
+Y1 = NULL
+Y2 = NULL
+Y1run = NULL
+Y2run = NULL
+YABU1 = NULL
+YABU2 = NULL
+YABU1run = NULL
+YABU2run = NULL
+for (zzz in 1:nTD){
+repls = which(index==zzz)
+if(length(repls)>1){
+for (i in 1:(length(repls)-1)){
+for (j in (i+1):length(repls)){
+repl1 = repls[1]
+repl2 = repls[2]
+Y1 = append(Y1,Y[repl1,])
+Y2 = append(Y2,Y[repl2,])
+Y1run = append(Y1run, rep(env_design$run[repl1],ny))
+Y2run = append(Y2run, rep(env_design$run[repl2],ny))
+sel = which(Y[repl1,]==1 & Y[repl2,]==1)
+YABU1 = append(YABU1,YABU[repl1,sel])
+YABU2 = append(YABU2,YABU[repl2,sel])
+YABU1run = append(YABU1run, rep(env_design$run[repl1],length(sel)))
+YABU2run = append(YABU2run, rep(env_design$run[repl2],length(sel)))
+}
+}
+}
+}
+# MAKE A DATAFRAME THAT INCLUDES THE ENVIRONEMNTAL SAMPLES FOR TRAP-DATE COMBINATIONS (END) #####################################
+# CHECK CONSISTENCY OF SPECIES OCCURRENCES FOR REPLICATE SAMPLES (START) #####################################
+print(c(length(Y1),sum(Y1+Y2==0),sum(Y1+Y2==2),sum(Y1+Y2==1)))
+# CHECK CONSISTENCY OF SPECIES OCCURRENCES FOR REPLICATE SAMPLES (END) #####################################
+# CHECK CONSISTENCY OF SPECIES ABUNDANCES FOR REPLICATE SAMPLES AND STANDARDIZE AMONG RUNS (START) #####################################
+summary(lm(YABU2~YABU1))
+runs = unique(env_design$run)
+nruns = length(runs)
+nA = length(YABU1)
+for (i in 1:nA){
+YABU1run[i] = which(runs == YABU1run[i])
+YABU2run[i] = which(runs == YABU2run[i])
+}
+YABU1run = as.numeric(YABU1run)
+YABU2run = as.numeric(YABU2run)
+YABUruns = cbind(YABU1run,YABU2run)
+print(unique(YABUruns))
+X = matrix(0,nrow = nA, ncol = 3) #cols: 1->2; 1->3; 1->4
+for (i in 1:nA){
+if(sum(YABUruns[i,]==c(1,2))==2){X[i,1] = -1}
+if(sum(YABUruns[i,]==c(1,3))==2){X[i,2] = -1}
+if(sum(YABUruns[i,]==c(1,4))==2){X[i,3] = -1}
+if(sum(YABUruns[i,]==c(2,3))==2){
+X[i,1] = 1
+X[i,2] = -1}
+if(sum(YABUruns[i,]==c(3,4))==2){
+X[i,2] = 1
+X[i,3] = -1}
+}
+mylm = lm(YABU2~0 + X[,1] + X[,2] + X[,3], offset = YABU1)
+print(summary(mylm))
+coef=mylm$coefficients
+beta = coef[1:3]
+YABU1c = YABU1 + (YABU1run==2)*beta[1] + (YABU1run==3)*beta[2] + (YABU1run==4)*beta[3]
+YABU2c = YABU2 + (YABU2run==2)*beta[1] + (YABU2run==3)*beta[2] + (YABU2run==4)*beta[3]
+summary(lm(YABU1c~0,offset = YABU2c))
+plot(YABU1c,YABU2c,xlab="Abundance (replicate 1)",ylab="Abundance (replicate 2)")
+abline(0,1)
+text(c("A","D")[COImito],x=c(-6.7,-6)[COImito],y=c(1.7,4)[COImito])
+c(sqrt(mean((YABU2-YABU1)^2)),sqrt(mean((YABU2c-YABU1c)^2)))
+# CHECK CONSISTENCY OF SPECIES ABUNDANCES FOR REPLICATE SAMPLES AND STANDARDIZE AMONG RUNS (END) #####################################
+# POOL REPLICATE SAMPLES TO CREATE THE DATA MATRIX FOR ECOLOGICAL ANALYSES (START) #####################################
+YY = matrix(0,nrow = nTD, ncol = ns)
+YYABU = matrix(NA,nrow = nTD, ncol = ns)
+for (i in 1:nTD){
+sel = which(env_design$trap == TD$trap[i] & env_design$date == TD$date[i])
+if(length(sel)==1){
+YY[i,] = Y[sel,]
+YYABU[i,] = YABU[sel,]
+} else{
+YY[i,] = 1*(colSums(Y[sel,])>0)
+YYABU[i,] = colMeans(YABU[sel,],na.rm = TRUE)
+}
+}
+#omit species not systematically sampled
+keep = rep(NA,ns)
+for(i in 1:ns){
+keep[i] = species$omit_from_env[which(species$sp==spp[i])]=="Keep"
+}
+YY=YY[,keep]
+YYABU=YYABU[,keep]
+#omit species too rare for analysis
+print(c(sum(colSums(YY)>0),sum(colSums(YY)>4)))
+selsp = which(colSums(YY)>4)
+YYALL = YY
+YY = YY[,selsp]
+YYABU = YYABU[,selsp]
+# POOL REPLICATE SAMPLES TO CREATE THE DATA MATRIX FOR ECOLOGICAL ANALYSES (END) #####################################
+# CONSTRUCT PREDICTORS (YEAR AND JULIAN DATE) FOR THE ENVIRONMENTAL SAMPLES (START) #####################################
+YEAR = rep(0,nTD)
+JDATE = rep(0,nTD)
+for (i in 1:nTD){
+date = TD$date[i]
+year_string = substr(date,start=1,stop=4)
+date0 = as.Date(paste0(year_string,"-01-01"))
+JDATE[i] = julian(date)-julian(date0)
+YEAR[i] = as.numeric(year_string)
+}
+TRAP = TD$trap
+JDATE2 = JDATE*JDATE
+# CONSTRUCT PREDICTORS (YEAR AND JULIAN DATE) FOR THE ENVIRONMENTAL SAMPLES (END) #####################################
+# FIT ALTERNATIVE MODELS AND PLOT PANELS BCEF OF FIGURE 1 (START) #####################################
+YEARS = unique(YEAR)
+SY = rep(0,length(YEARS))
+for(i in 1:length(YEARS)){
+SY[i] =  sum(colSums(YYALL[YEAR==YEARS[i],])>0)
+}
+if(type=="mitogenome"){
+SY_mitogenome = SY
+} else{
+SY_COI = SY
+}
+print(summary(glm(SY~YEARS, family = poisson)))
+print(mean(SY))
+S = rowSums(YY)
+myglm1 = glm(S ~ YEAR+JDATE+JDATE*YEAR+JDATE2+TRAP, family = poisson)
+myglm2 = glm(S ~ YEAR+JDATE+JDATE*YEAR+JDATE2, family = poisson)
+myglm3 = glm(S ~ YEAR+JDATE+JDATE*YEAR, family = poisson)
+myglm4 = glm(S ~ YEAR+JDATE+JDATE2, family = poisson)
+myglm5 = glm(S ~ YEAR+JDATE, family = poisson)
+myglm6 = glm(S ~ JDATE+JDATE2, family = poisson)
+aic = AIC(myglm1,myglm2,myglm3,myglm4,myglm5,myglm6)
+print(aic-min(aic$AIC))
+if(type=="mitogenome"){
+myglm = myglm2
+}else{
+myglm = myglm4
+}
+summary(myglm)
+for (zzz in 1:2){
+predjdate = min(JDATE):max(JDATE)
+npred = length(predjdate)
+if(zzz==1){predyear = rep(min(YEAR),npred)} else {predyear = rep(max(YEAR),npred)}
+predtrap = rep(TRAP[1],npred)
+preddata = data.frame(YEAR = predyear, JDATE = predjdate, JDATE2 = predjdate^2, TRAP = predtrap)
+if (zzz==1){
+plot(predjdate,exp(predict(myglm,newdata = preddata)),'l',col='black',
+ylim=c(0,11), xlab = "Julian date", ylab = "Species richness")
+}
+if (zzz==2){
+lines(predjdate,exp(predict(myglm,newdata = preddata)),'l',col='red')
+}
+text("year = 1997",x=180,y=c(8.2,10.7)[COImito],col="black",pos=4)
+text("year = 2013",x=180,y=c(3.5,4)[COImito],col="red",pos=4)
+text(c("B","E")[COImito],x=160,y=10.5)
+}
+YYABU = scale(YYABU)
+ABU = rowMeans(YYABU, na.rm=TRUE)
+mylm1 = lm(ABU ~ YEAR+JDATE+JDATE*YEAR+JDATE2+TRAP)
+mylm2 = lm(ABU ~ YEAR+JDATE+JDATE*YEAR+JDATE2)
+mylm3 = lm(ABU ~ YEAR+JDATE+JDATE*YEAR)
+mylm4 = lm(ABU ~ YEAR+JDATE+JDATE2)
+mylm5 = lm(ABU ~ YEAR+JDATE)
+mylm6 = lm(ABU ~ YEAR)
+aic=AIC(mylm1,mylm2,mylm3,mylm4,mylm5,mylm6)
+print(aic-min(aic$AIC))
+if(type=="mitogenome"){
+mylm = mylm5
+}else{
+mylm = mylm6
+}
+summary(mylm)
+for (zzz in 1:2){
+predjdate = min(JDATE):max(JDATE)
+npred = length(predjdate)
+if(zzz==1){predyear = rep(min(YEAR),npred)} else {predyear = rep(max(YEAR),npred)}
+predtrap = rep(TRAP[1],npred)
+preddata = data.frame(YEAR = predyear, JDATE = predjdate, JDATE2 = predjdate^2, TRAP = predtrap)
+if (zzz==1){plot(predjdate,predict(mylm,newdata = preddata),'l',col='black',
+ylim = c(-0.6,0.6), xlab = "Julian date", ylab = "Mean abundance")}
+if (zzz==2){lines(predjdate,predict(mylm,newdata = preddata),'l',col='red')}
+# FIT ALTERNATIVE MODELS AND PLOT PANELS BCEF OF FIGURE 1 (START) #####################################
+}
+text("year = 1997",x=180,y=c(-0.3,-0.4)[COImito],col="black",pos=4)
+text("year = 2013",x=180,y=c(0.2,0.3)[COImito],col="red",pos=4)
+text(c("C","F")[COImito],x=160,y=0.55)
+}
+mtext("based on barcode data", side=3, line=-2.3, outer=TRUE)
+mtext("based on mitogenome data", side=3, line=-25.5, outer=TRUE)
+library(tidyverse)
+library(modelr)
+library(gapminder)
+gapminder
+diamonds2 <- diamonds %>%
+filter(carat <= 2.5) %>%
+mutate(lprice = log2(price), lcarat = log2(carat))
+mod_diamond <- lm(lprice ~ lcarat, data = diamonds2)
+grid <- diamonds2 %>%
+data_grid(lcarat = seq_range(lcarat, n = 20)) %>%
+mutate(carat = 2^lcarat) %>%
+add_predictions(mod_diamond, var = "lprice") %>%
+mutate(price = 2^lprice)
+ggplot(data = diamonds2, aes(x = carat, y = price)) +
+geom_hex(bins = 50) +
+geom_line(data = grid, color = "red", size = 1)
+diamonds2 <- diamonds2 %>%
+add_residuals(model = mod_diamond, var = "lresid")
+ggplot(data = diamonds2, aes(x = lcarat, y = lresid)) +
+geom_hex(bins = 50)
+# remove the few really large diamonds
+diamonds2 <- diamonds %>%
+filter(carat <= 2.5) %>%
+mutate(lprice = log2(price), lcarat = log2(carat))
+ggplot(diamonds2, aes(lcarat, lprice)) +
+geom_hex(bins = 50)
+mod_diamond <- lm(lprice ~ lcarat, data = diamonds2)
+# now make an overlay of the fitted model mod_diamond and the data, using carat and price as the axes
+# the only predictor in mod_diamond is lcarat, but we want a data_grid that also has carat and price, because we want to plot the raw variables, not the transformed variables
+grid <- diamonds2 %>%
+data_grid(carat = seq_range(carat, n = 50)) %>% # use seq_range() to create the evenly spaced range of this continuous variable
+mutate(lcarat = log2(carat)) %>% # calculate lcarat as input to mod_diamond
+add_predictions(mod_diamond, var = "lprice") %>% # "lprice" instead of default "pred"
+mutate(price = 2^(lprice)) # calculate price from predicted lprice
+ggplot(diamonds2, aes(x = carat, y = price)) +
+geom_hex(bins = 50) +  # show the original data
+geom_line(data = grid, color = "red", size = 1) # overlay the model, using points from grid. this can use the global "aes(x = carat, y = price)" but now, these variables are taken from the grid dataframe, where they represent only the fitted points
+diamonds2 <- diamonds2 %>%
+add_residuals(mod_diamond, "lresid") # because the model uses lprice ~ lcarat
+ggplot(diamonds2, aes(x = lcarat, y = lresid)) +
+geom_hex(bins = 50) # effect of carat on price has been removed because there is no relationship between lcarat and the residuals
+# create more complex model with four predictors
+mod_diamond2 <- lm(lprice ~ lcarat + cut + color + clarity, data = diamonds2)
+# create data_grid with cut and color and one typical value for lcarat and clarity, get predicted lprice values, and back-transform to get price
+# NB the predictions are lprice because the model uses lprice ~ lcarat
+grid <- diamonds2 %>%
+data_grid(cut, color, .model = mod_diamond2) %>%
+add_predictions(mod_diamond2, "lprice") %>%
+mutate(price = 2^lprice, carat = 2^lcarat)
+# scatterplot of predicted prices as a function of cut and color for typical values of lcarat and
+ggplot(data = grid, aes(x = cut, y = price, color = color)) +
+geom_point()
+ggplot(data = grid, aes(x = color, y = price, color = cut)) +
+geom_point()
+ggplot(data = grid, aes(x = color, y = price, group = cut)) +
+geom_point()
+# if i just want to use black for the different lines, just use 'group = cut'
+ggplot(data = grid, aes(x = color, y = price, group = cut)) +
+geom_point()
+ggplot(gapminder, aes(year, lifeExp, group = country)) +
+```
+ggplot(gapminder, aes(year, lifeExp, group = country))
+ggplot(gapminder, aes(year, lifeExp, group = country)) +
+geom_line(alpha = 1/3)
+gapminder
+ggplot(gapminder, aes(year, lifeExp, group = country, color = continent)) +
+geom_line(alpha = 1/3)
+ggplot(gapminder, aes(year, lifeExp, group = country, linetype = continent)) +
+geom_line(alpha = 1/3)
+by_country <- gapminder %>%
+group_by(country, continent) %>%
+nest()
+View(by_country)
+by_country
+gapminder
+# # A tibble: 1,704 x 6
+#    country     continent  year lifeExp      pop gdpPercap
+#    <fct>       <fct>     <int>   <dbl>    <int>     <dbl>
+#  1 Afghanistan Asia       1952    28.8  8425333      779.
+#  2 Afghanistan Asia       1957    30.3  9240934      821.
+#  3 Afghanistan Asia       1962    32.0 10267083      853.
+#  ...
+head(gapminder, n = 20)
+by_country[[1]]
+by_country$data[[1]]
+View(by_country)
+by_country # the data for each country is now nested inside the data column (12 rows x 4 cols)
+by_country$data
+models <- map(by_country$data, country_model)
+# create a function
+country_model <- function(df) {
+lm(LifeExp ~ year, data = df)
+}
+models <- map(by_country$data, country_model)
+# create a function
+country_model <- function(df) {
+lm(lifeExp ~ year, data = df)
+}
+models <- map(by_country$data, country_model)
+View(models)
+by_countrytest <- by_country %>%
+mutate(model = map(by_country$data, country_model))
+View(by_countrytest)
+# but actually, i want each country's model in the same dataframe as its original data
+by_country <- by_country %>%
+mutate(model = map(by_country$data, country_model))
+# model is now the fourth column, each row holding the lm() model object
+by_country
+by_country %>% filter(continent == "Europe")
+by_country %>% arrange(continent, country)
+# now add residuals
+by_country <- by_country %>%
+mutate(resid = map2(data, model, add_residuals))
+View(by_country)
+# note that add_residuals() has this syntax:  add_residuals(data, model, var = "resid"), so map2 takes the first two arguments and inserts them into this command.
+by_country
+# to plot, we need to un-nest
+resids <- unnest(by_country, resid)
+View(resids)
+allunnest <- unnest(by_country)
+by_country$resid[[1]]
+data <- unnest(by_country, data) # the 'resid' in the second argument means that the resid column in by_country is unnested, and the data and model columns are just dropped
+View(data)
+by_country$resid[[1]] # The content of
+resids2 <- unnest(by_country, data, resid) # the 'resid' in the second argument means that the resid column in by_country is unnested, and the data and model columns are just dropped
+View(resids2)
+rm(resids2, data)
+# note that if the resids column had not contained the original data, i could have instead run
+# resid <- unnest(by_country, data, resid) # if i run this, i get two sets of data columns
+resids
+resids %>% ggplot(aes(x = year, y = resid, group = country)) +
+geom_line(alpha = 1/3)
+resids %>% ggplot(aes(x = year, y = resid, group = country)) +
+geom_line(alpha = 1/3) +
+geom_smooth()
+resids %>% ggplot(aes(x = year, y = resid)) +
+geom_line(alpha = 1/3) +
+geom_smooth()
+resids %>% ggplot(aes(x = year, y = resid)) +
+geom_line(aes(group = country), alpha = 1/3) +
+geom_smooth()
+# here, aes(group = country) can be put into just geom_line(), so that geom_smooth uses the global aes()
+resids %>% ggplot(aes(x = year, y = resid)) +
+geom_line(aes(group = country), alpha = 1/3) +
+geom_smooth()
+# here, aes(group = country) can be put into just geom_line(), so that geom_smooth uses the global aes()
+resids %>% ggplot(aes(x = year, y = resid)) +
+geom_line(aes(group = country), alpha = 1/3) +
+geom_smooth(se = FALSE)
+# here, aes(group = country) can be put into just geom_line(), so that geom_smooth uses the global aes()
+resids %>% ggplot(aes(x = year, y = resid)) +
+geom_line(aes(group = country), alpha = 1/3) +
+geom_smooth(se = FALSE) +
+facet_wrap(~ continent)
+# broom
+nz <-filter ( gapminder , country == "New Zealand" )
+library(tidyverse)
+library(modelr)
+library(gapminder)
+gapminder # each country has 12 rows of data
+ggplot(gapminder, aes(year, lifeExp, group = country, color = continent)) +
+geom_line(alpha = 1/3)
+by_country <- gapminder %>%
+group_by(country, continent) %>%
+nest()
+by_country # the data for each country is now nested inside the data column (12 rows x 4 cols)
+# by_country$data # shows all 142 tibbles!
+by_country$data[[1]] # data from Afghanistan
+# create a function
+country_model <- function(df) {
+lm(lifeExp ~ year, data = df)
+}
+# models <- map(by_country$data, country_model) # this just saves a bunch of models
+# but actually, i want each country's model in the same dataframe as its original data
+by_country <- by_country %>%
+mutate(model = map(by_country$data, country_model))
+# model is now the fourth column, each row holding the lm() model object
+by_country
+by_country %>% filter(continent == "Europe")
+by_country %>% arrange(continent, country)
+# now add residuals
+by_country <- by_country %>%
+mutate(resid = map2(data, model, add_residuals))
+# note that add_residuals() has this syntax:  add_residuals(data, model, var = "resid"), so map2 takes the first two arguments and inserts them into this command.
+by_country
+by_country$resid[[1]] # The content of the resids column includes the data.  I don't know why, but it's convenient
+# to plot, we need to un-nest
+resids <- unnest(by_country, resid) # the 'resid' in the second argument means that the resid column in by_country is unnested, and the data and model columns are just dropped
+# note that if the resids column had not contained the original data, i could have instead run
+# resid <- unnest(by_country, data, resid) # if i run this, i get two sets of data columns
+resids
+# here, aes(group = country) can be put into just geom_line(), so that geom_smooth uses the global aes()
+resids %>% ggplot(aes(x = year, y = resid)) +
+geom_line(aes(group = country), alpha = 1/3) +
+geom_smooth(se = FALSE) +
+facet_wrap(~ continent)
+# broom
+nz <-filter ( gapminder , country == "New Zealand" )
+nz %>% ggplot ( aes ( year , lifeExp )) +
+geom_line () +
+ggtitle ( "Full data = " )
+nz_mod <-lm ( lifeExp ~ year , data = nz )
+nz %>% add_predictions ( nz_mod ) %>%
+ggplot ( aes ( year , pred )) +
+geom_line () +
+ggtitle ( "Linear trend + " )
+nz %>% add_residuals ( nz_mod ) %>%
+ggplot ( aes ( year , resid )) +
+geom_hline ( yintercept = 0 , color = "white" , size = 3 ) +
+geom_line () +
+ggtitle ( "Remaining pattern" )
+broom::glance(nz_mod)
+nz_mod
+broom::glance(nz_mod)
+View(by_country)
+names(by_country)
+# model column holds the year lm() for each country
+# for all the countries at once
+by_country %>% mutate(glance = map(model, glance)) %>%
+unnest(glance)
+library(broom)
+# model column holds the year lm() for each country
+# for all the countries at once
+by_country %>% mutate(glance = map(model, glance)) %>%
+unnest(glance)
+# model column holds the year lm() for each country
+# for all the countries at once
+by_country %>% mutate(glance = map(model, glance)) %>%
+unnest(glance, .drop = TRUE)
+# model column holds the year lm() for each country
+# for all the countries at once
+by_country %>% mutate(glance = map(model, glance)) %>%
+unnest(glance, .drop = TRUE)
+# model column holds the year lm() for each country
+# for all the countries at once
+glance <- by_country %>% mutate(glance = map(model, glance)) %>%
+unnest(glance, .drop = TRUE)
+# creates tibble with the model results for each country
+# .drop = TRUE means drop the list items from the tibble:  data, model, resid
+glance
+glance %>% arrange(r.squared)
+glance %>%
+ggplot(aes(continent, r.squared)) +
+geom_jitter(width = 0.5)
+glance %>%
+ggplot(aes(continent, r.squared)) +
+geom_jitter(width = 0.5) +
+geom_boxplot()
+glance %>%
+ggplot(aes(continent, r.squared)) +
+geom_boxplot() +
+geom_jitter(width = 0.5)
+bad_fit <- filter(glance, r.squared < 0.25)
+gapminder %>% semi_join(bad_fit, by = "country") %>%
+ggplot(aes(year, lifeExp, color = country)) +
+geom_line()
+broom::tidy(nz_mod)
+broom::augment(nz_mod, nz)
+broom::tidy(nz_mod) #
+broom::augment(nz_mod, nz) # a row for
+install.packages(tidymodels)
+install.packages("tidymodels")
+install.packages(c("ape", "aphid", "callr", "colorspace", "DataExplorer", "dendextend", "ggeffects", "ggforce", "git2r", "glue", "httpuv", "kableExtra", "kmer", "lazyeval", "loo", "mclust", "msm", "permute", "polyclip", "pROC", "purrr", "Rcpp", "readxl", "rgdal", "rgl", "rmarkdown", "sjmisc", "sjstats", "stringi", "tibble", "tinytex", "V8"))
+install.packages(c("ape", "aphid", "callr", "colorspace", "DataExplorer", "dendextend", "ggeffects", "ggforce", "git2r", "glue", "httpuv", "kableExtra", "kmer", "lazyeval", "loo", "mclust", "msm", "permute", "polyclip", "pROC", "purrr", "Rcpp", "readxl", "rgdal", "rgl", "rmarkdown", "sjmisc", "sjstats", "stringi", "tibble", "tinytex", "V8"))
+library(igraph)
+demo()
+demo(centrality)
+demo(cohesive)
+demo(community)
+demo(crashR)
+demo(hrg)
+demo(smallworld)
+install.packages(c("arsenal", "geometry", "gtable"))
+require(arsenal)
+data("mockstudy)
+""
+"
+data(mockstudy)
+tab.ex <- table(mockstudy[, c("arm", "sex", "mdquality.s")], useNA = "ifany")
+example1 <- freqlist(tab.ex)
+View(example1)
+head(as.data.frame(example1))
+mockstudy
+head(as.data.frame(example1))
+head(mockstudy)
+View(mockstudy)
