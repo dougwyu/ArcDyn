@@ -10,6 +10,9 @@ library(tidyverse)
 library(pheatmap)
 library(lubridate)
 library(hablar)
+library(conflicted)
+    conflict_prefer("filter", "dplyr")
+    conflict_prefer("select", "dplyr")
 # library(grateful)
 sessionInfo()
 ```
@@ -37,6 +40,33 @@ env_data_mitogenome2 <- left_join(env_data_mitogenome2, species) %>%
 
 env_data_mitogenome2 %>% dplyr::filter(n >= 5) %>% count()
 ```
+
+
+```{r kelpie compare}
+combined_df <- left_join(env_data_COI, env_seq_depth, by = c("sample")) %>% 
+  left_join(species, by = c("sp"))
+
+# sample:  Date_1997_07_01_TrapA_AB
+combined_df <- combined_df %>% 
+  separate(sample, c(NA, "year", "month", "date", "trap", "plate"), sep = "_")  %>% 
+  select(year, month, date, trap, plate, PC, mapped_reads, COI, COI_length) %>% 
+  filter(year %in% c(2003, 2004, 2005))
+
+mainDir = "~/Dropbox/Working_docs/Kelpie/data_20190419/BF3BR2_2_mismatch_v1.2.6/"
+filename = "minimap2_results_20190204.RData"
+
+if(file_test("-f", file.path(mainDir, filename))) {  # test if file already exists "-f"
+    stop("File can't be saved because a file with that name already exists.") 
+  } else {
+    save(combined_df, file = file.path(mainDir, filename))
+  }
+
+```
+
+
+
+
+
 
 
 
