@@ -1,17 +1,17 @@
 {
-    "path" : "~/Dropbox/Working_docs/Roslin_Greenland/2017/bulk_samples/ArcDyn_scripts/7_ecological_analysis",
-    "sortOrder" : [
+    "path": "~/Documents/Working_docs_archived/Roslin_Greenland_archived/2017/bulk_samples/ArcDyn_scripts/7_ecological_analysis",
+    "sortOrder": [
         {
-            "ascending" : true,
-            "columnIndex" : 2
+            "columnIndex": 2,
+            "ascending": true
         },
         {
-            "ascending" : false,
-            "columnIndex" : 4
+            "columnIndex": 4,
+            "ascending": false
         },
         {
-            "ascending" : false,
-            "columnIndex" : 3
+            "columnIndex": 3,
+            "ascending": false
         }
     ]
 }
