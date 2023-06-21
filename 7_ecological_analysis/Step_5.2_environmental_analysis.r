@@ -9,6 +9,7 @@ dataDir = file.path(localDir, "Rdata")
 # load(file.path(dataDir, "input_data_step5_20190115.RData"))
 # load(file.path(dataDir, "input_data_step5_20190202.RData"))
 load(file.path(dataDir, "input_data_step5_20190204.RData"))
+# the input file is the output of Abrego_Roslin_Greenland/2017/bulk_samples/ArcDyn_scripts/5_idxstats_tabulate/7_datafiles_for_ArcDyn_methods.Rmde/7_datafiles_for_ArcDyn_methods.Rmd
 #input_data_step5.RData includes the following data frames:
 #species: the species included in the study
 #spikes: the spikes used
@@ -294,7 +295,7 @@ for(COImito in 1:2){ #Loop over the two types of analyses: barcode and mitogenom
   text(c("C","F")[COImito],x=160,y=0.55)
 }
 mtext("based on barcode data", side=3, line=-2.3, outer=TRUE)
-mtext("based on mitogenome data", side=3, line=-25.5, outer=TRUE)
+mtext("based on mitogenome data", side=3, line=-32.5, outer=TRUE)
 # dev.off()
 
 # PLOT FIGURE 2 (START) #####################################

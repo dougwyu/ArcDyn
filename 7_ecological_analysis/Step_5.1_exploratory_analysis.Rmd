@@ -24,6 +24,12 @@ dataDir = file.path(localDir, "Rdata")
 # load(file.path(dataDir, "input_data_step5_20190115.RData")) # 308 mitogenomes, minimap2 v 2.10, version used for SPIKEPIPE paper
 # load(file.path(dataDir, "input_data_step5_20190202.RData")) # 349 MITOCOICYTB, minimap2 v 2.10
 load(file.path(dataDir, "input_data_step5_20190204.RData")) # 349 MITOCOICYTB, minimap2 v 2.15
+
+# [1] "sample"       "sp"           "PC"           "mapped_reads"
+# sample:  sample information
+# sp:  species code
+# PC:  percent coverage of mapped reads. for mitogenomes, if the mapped reads cover >10% of the mitogenome, we consider it a true positive detection. for barcodes, we consider 50% PC (pct coverage) to be the threshold of detection. These values were derived from experiment with mock samples of known composition
+# mapped_reads:  number of reads that mapped to a given barcode or mitogenome sequence that had mapping quality greater than a threshold value (I think i set this at MAPQ≥48 but check the paper)
 ```
 
 ```{r}
@@ -34,7 +40,7 @@ env_data_mitogenome2 <- env_data_mitogenome %>%
     hablar::convert(dte(Date)) # convert(.df, dte(.x))
 
 env_data_mitogenome2 <- left_join(env_data_mitogenome2, species) %>% 
-    dplyr::filter(PC >= 0.1) %>% 
+    dplyr::filter(PC >= 0.1) %>% # filters out false-positive detections
     count(mitogenome) %>% 
     arrange(desc(n))
 
