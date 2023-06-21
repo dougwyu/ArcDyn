@@ -1,0 +1,45 @@
+---
+title: "Step_5.3_heatmap"
+format: html
+editor: source
+---
+
+```{r}
+library(tidyverse)
+
+# usethis::edit_r_profile() 
+    # add this to my profile: options(rstudio.help.showDataPreview = FALSE) 
+    # this disables the following error message, which is a bug: 
+        # Error in exists(cacheKey, where = .rs.WorkingDataEnv, inherits = FALSE) : 
+        #   invalid first argument
+        # Error in assign(cacheKey, frame, .rs.CachedDataEnv) : 
+        #   attempt to use zero-length variable name
+```
+
+
+
+```{r}
+# run Step_5.2_environmental_analysis.r to output FSL, samples, spp.
+source("Step_5.2_environmental_analysis.r")
+
+# now join FSL, samples, spp into the sample x species table
+dim(FSL) # 712 samples, 349 species
+expFSL <- as_tibble(exp(FSL)) # antilog FSL 
+colnames(expFSL) <- spp
+expFSL <- expFSL |> mutate(samples = samples) |> 
+    relocate(samples)
+view(expFSL)
+
+```
+
+next steps
+1. filter the 712 samples to 492 unique samples (e.g. remove A2B2 or AB)
+2. transpose
+3. join with species names 
+4. heatmap
+
+
+```{r}
+
+```
+
