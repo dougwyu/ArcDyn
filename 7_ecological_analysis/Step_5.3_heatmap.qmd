@@ -6,6 +6,12 @@ editor: source
 
 ```{r}
 library(tidyverse)
+library(sjmisc)
+library(pheatmap)
+library(scales)
+
+# Print real numbers, not scientific notation.
+options(scipen = 9999)
 
 # usethis::edit_r_profile() 
     # add this to my profile: options(rstudio.help.showDataPreview = FALSE) 
@@ -19,27 +25,88 @@ library(tidyverse)
 
 
 ```{r}
-# run Step_5.2_environmental_analysis.r to output FSL, samples, spp.
+# run Step_5.2_environmental_analysis.r to output FSL, spp, samples
 source("Step_5.2_environmental_analysis.r")
+BETA_FSL = 0.9035603 #This parameter is based on script 5.1
 
-# now join FSL, samples, spp into the sample x species table
-dim(FSL) # 712 samples, 349 species
-expFSL <- as_tibble(exp(FSL)) # antilog FSL 
-colnames(expFSL) <- spp
-expFSL <- expFSL |> mutate(samples = samples) |> 
-    relocate(samples)
-view(expFSL)
+# Z-normalise the mapped reads within each row (= species)
+calc_z_score <- function(x){
+    (x - mean(x)) / sd(x)
+    }
 
 ```
 
-next steps
-1. filter the 712 samples to 492 unique samples (e.g. remove A2B2 or AB)
-2. transpose
-3. join with species names 
-4. heatmap
-
 
 ```{r}
+# join FSL, samples, spp into the sample x species table
+dim(FSL) # 712 samples, 349 species
+FSL <- BETA_FSL * FSL
+expFSL <- as_tibble(exp(FSL)) # antilog FSL
+expFSL[is.na(expFSL)] <- 0 # replace all NAs with 0.
 
+colnames(expFSL) <- spp
+
+expFSL <- expFSL |> mutate(samples = samples) |> 
+    relocate(samples) |> 
+    arrange(samples)
+# view(expFSL)
+
+expFSL2 <- expFSL |> 
+    separate_wider_delim(samples, delim = "_", 
+                         names = c("Date", "Year", "Month", "Day", "Trap", "EIRUN")) |> 
+    select(-Date) |> 
+    unite("Date", Year:Day, sep = "-") |> 
+    unite("Sample", Date, Trap, sep = "_") |> 
+    filter(EIRUN != "A2B2") |> 
+    # distinct(Sample, .keep_all = TRUE) |> # keeps first row 
+    separate_wider_delim("Sample", names = c("Date", "Trap"), delim = "_") 
+
+# waldo::compare(expFSL, expFSL2)
+
+expFSL3 <- expFSL2 |> 
+    group_by(Date) |> 
+    summarise(across(starts_with("sp"), mean)) |> 
+    mutate(Date = str_c("Date_", Date)) 
+
+expFSL4 <- expFSL3 |> rotate_df(cn = TRUE)
+
+expFSL4$count <- rowSums(expFSL4 > 0) 
+expFSL4$count
+
+expFSL5 <- expFSL4 |> filter(count > 5) 
+expFSL5$count
+
+expFSL6 <- expFSL5 |> select(-count)
+
+# expFSL7 <- t(apply(expFSL6, 1, calc_z_score)) # 1 == margin = rows. 2 == cols, z-score
+expFSL7 <- t(apply(expFSL6, 1, scales::rescale)) # 1 == margin = rows. 2 == cols, pseudoprob
+```
+
+```{r pheatmap}
+cols <- as_tibble(colnames(expFSL7)) |> 
+    mutate(year = str_remove(value, "Date_")) |> 
+    mutate(year = year(year)) |> 
+    mutate(year = as.numeric(year)) |> 
+    column_to_rownames("value")
+
+pheatmap(expFSL7, 
+         gaps_col = c(9, 18, 26, 37, 46, 56, 66, 78, 
+                      90, 98, 110, 120, 134, 149, 162),
+         cluster_cols = FALSE,
+         cluster_rows = TRUE,
+         cutree_rows = 7,
+         annotation_col = cols,
+         fontsize_row = 9,
+         clustering_distance_rows = "manhattan", # "euclidean", "maximum", "manhattan", "canberra", "binary" or "minkowski"
+         annotation_legend = FALSE,
+         show_colnames = FALSE,
+         annotation_names_col = TRUE,
+         clustering_method = "ward.D", # "complete", ward.D", "ward.D2", "single", "complete", "average" (= UPGMA), "mcquitty" (= WPGMA), "median" (= WPGMC) or "centroid" (= UPGMC).
+         legend = TRUE
+         )
+
+
+
+    
 ```
 
