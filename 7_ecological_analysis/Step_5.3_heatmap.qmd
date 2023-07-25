@@ -4,11 +4,17 @@ format: html
 editor: source
 ---
 
+This script analyses the dataset used in Ji et al. (2020) and Abrego et al. (2021) and generates a heatmap of species abundance change by date. The dataset is from Ji et al. (2020) (and this script runs the Step_5.2_environmental_analysis.r script from Ji et al. to generate the data tables.) Then Step_5.3_heatmap.qmd formats and rescales before making the heatmap.
+
+The Step_5.2_environmental_analysis.r and Step_5.3_heatmap.qmd scripts and data are originally from https://github.com/dougwyu/ArcDyn in the 7_ecological_analysis/ folder
+
 ```{r}
 library(tidyverse)
 library(sjmisc)
 library(pheatmap)
 library(scales)
+library(paletteer)
+library(gt)
 
 # Print real numbers, not scientific notation.
 options(scipen = 9999)
@@ -25,88 +31,155 @@ options(scipen = 9999)
 
 
 ```{r}
-# run Step_5.2_environmental_analysis.r to output FSL, spp, samples
-source("Step_5.2_environmental_analysis.r")
+# run Step_5.2_environmental_analysis.r
+source("Step_5.2_environmental_analysis.r") # generates figures from Ji et al. (2020) and produces interim datasets. I use the FSL, spp, and samples objects to make the heatmap
 BETA_FSL = 0.9035603 #This parameter is based on script 5.1
 
-# Z-normalise the mapped reads within each row (= species)
+# This z-normalises the mapped reads within each row (= species). optionally used below
 calc_z_score <- function(x){
     (x - mean(x)) / sd(x)
     }
-
 ```
 
 
 ```{r}
 # join FSL, samples, spp into the sample x species table
 dim(FSL) # 712 samples, 349 species
-FSL <- BETA_FSL * FSL
-expFSL <- as_tibble(exp(FSL)) # antilog FSL
-expFSL[is.na(expFSL)] <- 0 # replace all NAs with 0.
+FSL2 <- BETA_FSL * FSL # correction from SPIKEPIPE paper to scale abundances
 
-colnames(expFSL) <- spp
+expFSL <- as_tibble(exp(FSL2)) # antilog FSL, exponentiate log(F/SL) (from SPIKEPIPE paper)
+expFSL[is.na(expFSL)] <- 0 # replace all NAs with 0
 
-expFSL <- expFSL |> mutate(samples = samples) |> 
+expFSL[expFSL > 0] <- 1 # convert to p/a data
+
+colnames(expFSL) <- spp # add species codes to column names
+
+expFSL <- expFSL |> mutate(samples = samples) |> # add sample information column
     relocate(samples) |> 
     arrange(samples)
 # view(expFSL)
 
+# do some filtering of rows 
 expFSL2 <- expFSL |> 
     separate_wider_delim(samples, delim = "_", 
                          names = c("Date", "Year", "Month", "Day", "Trap", "EIRUN")) |> 
     select(-Date) |> 
     unite("Date", Year:Day, sep = "-") |> 
     unite("Sample", Date, Trap, sep = "_") |> 
-    filter(EIRUN != "A2B2") |> 
-    # distinct(Sample, .keep_all = TRUE) |> # keeps first row 
-    separate_wider_delim("Sample", names = c("Date", "Trap"), delim = "_") 
-
-# waldo::compare(expFSL, expFSL2)
-
+    filter(EIRUN != "AB") |> # remove EIRUN AB, since A2B2 is the same but bigger
+    distinct(Sample, .keep_all = TRUE) # keeps first distinct row for each value of "sample", which removes technical replicates (e.g. 1997-07-01_TrapA in EIRUNs A2B2 and GH)
+     
+# sum incidences over traps within each date
 expFSL3 <- expFSL2 |> 
+    separate_wider_delim("Sample", names = c("Date", "Trap"), delim = "_") |> 
     group_by(Date) |> 
-    summarise(across(starts_with("sp"), mean)) |> 
+    summarise(across(starts_with("sp"), sum)) |> 
     mutate(Date = str_c("Date_", Date)) 
 
 expFSL4 <- expFSL3 |> rotate_df(cn = TRUE)
 
+# count number of incidences per species
 expFSL4$count <- rowSums(expFSL4 > 0) 
 expFSL4$count
+hist(expFSL4$count, breaks = 40)
 
-expFSL5 <- expFSL4 |> filter(count > 5) 
+expFSL5 <- expFSL4 |> filter(count > 5) # keep species with > 7 incidences (including multiple incidences in one week)
 expFSL5$count
 
 expFSL6 <- expFSL5 |> select(-count)
 
-# expFSL7 <- t(apply(expFSL6, 1, calc_z_score)) # 1 == margin = rows. 2 == cols, z-score
-expFSL7 <- t(apply(expFSL6, 1, scales::rescale)) # 1 == margin = rows. 2 == cols, pseudoprob
+# If i want to rescale the range [0, 3], i have 3 options, but for this figure, i chose to do none of these.
+
+# z-transform to mean 0 with calc_z_scale or to [0,1] with scales::rescale()
+# expFSL7 <- t(apply(expFSL6, 1, calc_z_score)) # 1 == margin = rows. 2 == cols
+
+# rescale to [0, 1]: pseudoprob
+# expFSL7 <- t(apply(expFSL6, 1, scales::rescale)) # 1 == margin = rows. 2 == cols
+
+# binarise
+# expFSL7 <- expFSL6
+# expFSL7[expFSL7 > 0] <- 1
 ```
 
 ```{r pheatmap}
-cols <- as_tibble(colnames(expFSL7)) |> 
+cols <- as_tibble(colnames(expFSL6)) |> 
     mutate(year = str_remove(value, "Date_")) |> 
     mutate(year = year(year)) |> 
     mutate(year = as.numeric(year)) |> 
-    column_to_rownames("value")
+    column_to_rownames("value") 
 
-pheatmap(expFSL7, 
-         gaps_col = c(9, 18, 26, 37, 46, 56, 66, 78, 
-                      90, 98, 110, 120, 134, 149, 162),
+(cols2 <- rownames_to_column(cols)) # to get column numbers where years change, for the gaps_col argument in pheatmap  
+
+col.pal <- paletteer_c("ggthemes::Green-Blue Diverging", 4, direction = -1)
+columns.pal <- list(year = colorRampPalette(c("#FCDACAFF", "#F28278FF"))( 14 ))
+
+# col.pal <- paletteer_c("ggthemes::Gray", 4, direction = 1) # greyscale option
+
+pheatmap(expFSL6, 
+         gaps_col = c(9, 17, 25, 36, 45, 55, 65, 77, 
+                      89, 97, 109, 119, 133, 148, 161), # year-change column numbers
+         color = col.pal,
          cluster_cols = FALSE,
          cluster_rows = TRUE,
-         cutree_rows = 7,
+         cutree_rows = 4,
          annotation_col = cols,
-         fontsize_row = 9,
-         clustering_distance_rows = "manhattan", # "euclidean", "maximum", "manhattan", "canberra", "binary" or "minkowski"
+         annotation_colors = columns.pal,
+         clustering_distance_rows = "manhattan", # "euclidean", "maximum", "manhattan" (this one), "canberra", "binary" or "minkowski"
          annotation_legend = FALSE,
          show_colnames = FALSE,
          annotation_names_col = TRUE,
-         clustering_method = "ward.D", # "complete", ward.D", "ward.D2", "single", "complete", "average" (= UPGMA), "mcquitty" (= WPGMA), "median" (= WPGMC) or "centroid" (= UPGMC).
-         legend = TRUE
+         fontsize_row = 8,
+         clustering_method = "ward.D", # "complete", ward.D", "ward.D2", "single", "average" (= UPGMA), "mcquitty" (= WPGMA), "median" (= WPGMC) or "centroid" (= UPGMC).
+         legend = TRUE,
+         legend_breaks = c(0, 1, 2, 3),
+         legend_labels = c("0", "1", "2", "3")
          )
-
-
-
-    
 ```
+
+Abrego et al. (2021) has analysed this dataset with a joint species distribution model. 
+
+The species object produced by Step_5.2_environmental_analysis.r contains the taxonomic names of each of the species codes in spp. So we can create an alternative heatmap with the species names attached to each row. 
+
+```{r heatmap with species taxonomies}
+spp <- rownames_to_column(data.frame(expFSL6)) |> 
+    select(rowname) |> 
+    rename(sp = rowname) |> 
+    left_join(species, join_by("sp" == "sp")) |> 
+    select(sp, Order, Family, Genus, Species_BOLD) |> 
+    unite(col = "species", Order:Species_BOLD, remove = TRUE)
+# cannot remove the "_BOLD:" codes, because these are needed to make some of the species names unique. E.g. there are multiple "Diptera_Sciaridae_genus_sp". 
+#  otherwise, could remove using mutate(species = str_remove(species, "_BOLD:.+"))
+
+expFSL7 <- expFSL6 |> 
+    rownames_to_column(var = "sp") 
+
+expFSL8 <- spp |> 
+    left_join(expFSL7, join_by("sp" == "sp")) |> 
+    select(-sp) |> 
+    column_to_rownames(var = "species")
+
+pheatmap(expFSL8, 
+         gaps_col = c(9, 17, 25, 36, 45, 55, 65, 77, 
+                      89, 97, 109, 119, 133, 148, 161), # year-change column numbers
+         color = col.pal,
+         cluster_cols = FALSE,
+         cluster_rows = TRUE,
+         cutree_rows = 5,
+         annotation_col = cols,
+         annotation_colors = columns.pal,
+         # annotation_row = spp,
+         clustering_distance_rows = "manhattan", # "euclidean", "maximum", "manhattan" (this one), "canberra", "binary" or "minkowski"
+         annotation_legend = FALSE,
+         show_colnames = FALSE,
+         show_rownames = TRUE,
+         annotation_names_col = TRUE,
+         fontsize_row = 7,
+         clustering_method = "ward.D", # "complete", ward.D", "ward.D2", "single", "average" (= UPGMA), "mcquitty" (= WPGMA), "median" (= WPGMC) or "centroid" (= UPGMC).
+         legend = TRUE,
+         legend_breaks = c(0, 1, 2, 3),
+         legend_labels = c("0", "1", "2", "3") 
+         )
+```
+
+
 
